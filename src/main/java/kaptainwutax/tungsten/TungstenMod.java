@@ -13,6 +13,7 @@ import java.util.Collections;
 public class TungstenMod implements ModInitializer {
 
 	public static Collection<Renderer> RENDERERS = Collections.synchronizedCollection(new ArrayList<>());
+	public static Collection<Renderer> TEST = Collections.synchronizedCollection(new ArrayList<>());
 	public static Vec3d TARGET = new Vec3d(0.5D, 10.0D, 0.5D);
 	public static PathExecutor EXECUTOR = new PathExecutor();
 	public static VoxelWorld WORLD;

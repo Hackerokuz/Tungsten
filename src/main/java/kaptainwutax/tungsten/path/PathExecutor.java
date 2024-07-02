@@ -1,5 +1,6 @@
 package kaptainwutax.tungsten.path;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.GameOptions;
 
@@ -24,6 +25,10 @@ public class PathExecutor {
     }
 
     public void tick(ClientPlayerEntity player, GameOptions options) {
+    	if(MinecraftClient.getInstance().options.socialInteractionsKey.isPressed()) {
+    		this.tick = this.path.size();
+//    		return;
+    	}
     	if(this.tick == this.path.size()) {
 		    options.forwardKey.setPressed(false);
 		    options.backKey.setPressed(false);
@@ -40,6 +45,7 @@ public class PathExecutor {
 		    }
 
 		    if(node.input != null) {
+			    player.stopFallFlying();
 			    options.forwardKey.setPressed(node.input.forward);
 			    options.backKey.setPressed(node.input.back);
 			    options.leftKey.setPressed(node.input.left);

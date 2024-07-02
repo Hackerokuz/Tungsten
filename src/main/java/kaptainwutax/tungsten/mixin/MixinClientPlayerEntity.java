@@ -19,6 +19,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ClientPlayerEntity.class)
 public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity {
 
+	private Thread patfinderThread = null;
+
 	public MixinClientPlayerEntity(ClientWorld world, GameProfile profile, @Nullable PlayerPublicKey publicKey) {
 		super(world, profile, publicKey);
 	}
@@ -34,8 +36,11 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 			Agent.INSTANCE.tick(this.world);
 		}
 
-		if(MinecraftClient.getInstance().options.swapHandsKey.isPressed()) {
+		if(MinecraftClient.getInstance().options.swapHandsKey.isPressed() && !PathFinder.active) {
 			PathFinder.find(this.world, TungstenMod.TARGET);
+		}
+		if (MinecraftClient.getInstance().options.socialInteractionsKey.isPressed() && PathFinder.thread != null && PathFinder.thread.isAlive()) {
+			PathFinder.thread.interrupt();
 		}
 	}
 
