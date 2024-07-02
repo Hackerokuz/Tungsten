@@ -10,8 +10,6 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 
-import baritone.em;
-import baritone.api.BaritoneAPI;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
 import kaptainwutax.tungsten.path.calculators.BinaryHeapOpenSet;
@@ -26,7 +24,6 @@ public class PathFinder {
 
 	public static boolean active = false;
 	public static Thread thread = null;
-	public static em bsi = null;
 	protected static final double[] COEFFICIENTS = {1.5, 2, 2.5, 3, 4, 5, 10};
 	protected static final Node[] bestSoFar = new Node[COEFFICIENTS.length];
 	private static final double minimumImprovement = 0.21;
@@ -35,8 +32,6 @@ public class PathFinder {
 	public static void find(WorldView world, Vec3d target) {
 		if(active)return;
 		active = true;
-		if (bsi == null)
-            bsi= new em(BaritoneAPI.getProvider().getPrimaryBaritone().getPlayerContext());
 
 		thread = new Thread(() -> {
 			try {
