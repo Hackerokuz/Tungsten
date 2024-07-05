@@ -986,6 +986,8 @@ public class Agent {
 
         if(i > 0) {
             //this.damage(DamageSource.FALL, i);
+        	this.velX = 0;
+        	this.velZ = 0;
             return true;
         }
 
@@ -1015,7 +1017,7 @@ public class Agent {
                             //change block state
                         } else if(state.getBlock() instanceof BubbleColumnBlock) {
                             BlockState surface = world.getBlockState(pos.up());
-                            boolean drag = surface.get(BubbleColumnBlock.DRAG);
+                            boolean drag = surface.contains(BubbleColumnBlock.DRAG) && surface.get(BubbleColumnBlock.DRAG);
 
                             if(surface.isAir()) {
                                 this.velY = drag ? Math.max(-0.9D, this.velY - 0.03D) : Math.min(1.8D, this.velY + 0.1D);
