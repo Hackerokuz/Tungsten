@@ -46,7 +46,7 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 
 	@Inject(method = "tick", at = @At(value = "RETURN"))
 	public void end(CallbackInfo ci) {
-		if(!this.getAbilities().flying) {
+		if(!this.getAbilities().flying && Agent.INSTANCE != null) {
 			Agent.INSTANCE.compare((ClientPlayerEntity)(Object)this, false);
 		}
 	}
