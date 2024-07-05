@@ -1,11 +1,11 @@
 package kaptainwutax.tungsten.path;
 
-import kaptainwutax.tungsten.render.Color;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.render.Color;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldView;
 
 public class Node {
@@ -43,7 +43,7 @@ public class Node {
 	        return heapPosition != -1;
     }
 
-	public List<Node> getChildren(WorldView world) {
+	public List<Node> getChildren(WorldView world, Vec3d target) {
 		Node n = this.parent;
 //		boolean mismatch = false;
 //		int i;
@@ -65,22 +65,24 @@ public class Node {
 
 		if(this.agent.onGround || this.agent.touchingWater) {
 			List<Node> nodes = new ArrayList<>();
+			// float[] pitchValues = {0.0f, 45.0f, 90.0f}; // Example pitch values
+//        	float[] yawValues = {-135.0f, -90.0f, -67.5f, -45.0f, -22.5f, 0.0f, 22.5f, 45.0f, 67.5f, 90.0f, 135.0f, 180.0f}; // Example yaw values
 
 			for (boolean forward : new boolean[]{true, false}) {
 //				for (boolean back : new boolean[]{true, false}) {
 					for (boolean right : new boolean[]{true, false}) {
 						for (boolean left : new boolean[]{true, false}) {
-//								for (boolean sneak : new boolean[]{true, false}) {
+								for (boolean sneak : new boolean[]{true, false}) {
 										// for (float pitch : pitchValues) {
 //											for (float yaw : yawValues) {
-										for (float yaw = -180.0f; yaw < 180.0f; yaw += 25) {
+										for (float yaw = -180.0f; yaw < 180.0f; yaw += 22.5) {
 											for (boolean sprint : new boolean[]{true, false}) {
 												for (boolean jump : new boolean[]{true, false}) {
-											
-												nodes.add(new Node(this, world, new PathInput(forward, false, right, left, jump, false, sprint, agent.pitch, yaw), new Color(0, 255, 0), this.cost + 1));
+													Node newNode = new Node(this, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw), new Color(0, 255, 0), this.cost + (jump ? sneak ? 4 :0.5 : sneak ? 4 : 2));
+													nodes.add(newNode);
 //											}
 											}
-										// }
+										 }
 									}
 //								}
 							}
