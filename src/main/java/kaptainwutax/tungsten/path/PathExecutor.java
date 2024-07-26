@@ -6,13 +6,20 @@ import net.minecraft.client.option.GameOptions;
 
 import java.util.List;
 
+import kaptainwutax.tungsten.TungstenMod;
+
 public class PathExecutor {
 
     protected List<Node> path;
     protected int tick = 0;
+    protected boolean allowedFlying = false;
 
     public PathExecutor() {
-
+    	try {
+        	this.allowedFlying = MinecraftClient.getInstance().player.getAbilities().allowFlying;
+		} catch (Exception e) {
+			this.allowedFlying = true;
+		}
 	}
 
 	public void setPath(List<Node> path) {
@@ -25,9 +32,18 @@ public class PathExecutor {
     }
 
     public void tick(ClientPlayerEntity player, GameOptions options) {
-    	if(MinecraftClient.getInstance().options.socialInteractionsKey.isPressed()) {
+    	player.getAbilities().allowFlying = false;
+    	if(TungstenMod.pauseKeyBinding.isPressed()) {
     		this.tick = this.path.size();
-//    		return;
+		    options.forwardKey.setPressed(false);
+		    options.backKey.setPressed(false);
+		    options.leftKey.setPressed(false);
+		    options.rightKey.setPressed(false);
+		    options.jumpKey.setPressed(false);
+		    options.sneakKey.setPressed(false);
+		    options.sprintKey.setPressed(false);
+		    player.getAbilities().allowFlying = true;
+    		return;
     	}
     	if(this.tick == this.path.size()) {
 		    options.forwardKey.setPressed(false);
@@ -37,6 +53,7 @@ public class PathExecutor {
 		    options.jumpKey.setPressed(false);
 		    options.sneakKey.setPressed(false);
 		    options.sprintKey.setPressed(false);
+		    player.getAbilities().allowFlying = true;
 	    } else {
 		    Node node = this.path.get(this.tick);
 
@@ -45,7 +62,7 @@ public class PathExecutor {
 		    }
 
 		    if(node.input != null) {
-			    player.stopFallFlying();
+			    if (player.isCreative()) player.stopFallFlying();
 			    options.forwardKey.setPressed(node.input.forward);
 			    options.backKey.setPressed(node.input.back);
 			    options.leftKey.setPressed(node.input.left);

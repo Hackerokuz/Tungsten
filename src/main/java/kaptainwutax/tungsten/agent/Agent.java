@@ -90,6 +90,7 @@ public class Agent {
     public boolean horizontalCollision;
     public boolean verticalCollision;
     public boolean collidedSoftly;
+    public boolean slimeBounce;
 
     public boolean jumping;
 
@@ -706,7 +707,10 @@ public class Agent {
 
         if(movY != ajuY) {
             if(block instanceof SlimeBlock && !this.input.sneaking) {
-                if(this.velY < 0.0D) this.velY *= -1;
+                if(this.velY < 0.0D) {
+                	this.velY *= -1;
+                	this.slimeBounce = true;
+                }
             } else if(block instanceof BedBlock) {
                 if(this.velY < 0.0D) this.velY *= -1 * (double)0.66F;
             } else {
@@ -723,6 +727,7 @@ public class Agent {
                 if(d < 0.1D) {
                     this.velX *= 0.4D + d * 0.2D;
                     this.velZ *= 0.4D + d * 0.2D;
+                	this.slimeBounce = true;
                 }
             } else if(block instanceof TurtleEggBlock) {
                 //eggs can break (1/100)
@@ -1000,8 +1005,10 @@ public class Agent {
     }
 
     public void checkBlockCollision(WorldView world) {
-        BlockPos blockPos = new BlockPos(this.box.minX + 0.001, this.box.minY + 0.001, this.box.minZ + 0.001);
-        BlockPos blockPos2 = new BlockPos(this.box.maxX - 0.001, this.box.maxY - 0.001, this.box.maxZ - 0.001);
+    	double minOffset = 0.001; // default 0.001
+    	double maxOffset = 0.001; // default 0.001
+        BlockPos blockPos = new BlockPos(this.box.minX + minOffset, this.box.minY + minOffset, this.box.minZ + minOffset);
+        BlockPos blockPos2 = new BlockPos(this.box.maxX - maxOffset, this.box.maxY - maxOffset, this.box.maxZ - maxOffset);
         BlockPos.Mutable pos = new BlockPos.Mutable();
 
         if(world.isRegionLoaded(blockPos, blockPos2)) {

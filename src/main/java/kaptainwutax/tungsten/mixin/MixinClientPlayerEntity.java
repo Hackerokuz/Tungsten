@@ -9,6 +9,8 @@ import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.network.encryption.PlayerPublicKey;
+import net.minecraft.text.Text;
+
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -36,11 +38,20 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 			Agent.INSTANCE.tick(this.world);
 		}
 
-		if(MinecraftClient.getInstance().options.swapHandsKey.isPressed() && !PathFinder.active) {
+		if(TungstenMod.runKeyBinding.isPressed() && !PathFinder.active) {
 			PathFinder.find(this.world, TungstenMod.TARGET);
 		}
-		if (MinecraftClient.getInstance().options.socialInteractionsKey.isPressed() && PathFinder.thread != null && PathFinder.thread.isAlive()) {
+		if(TungstenMod.runBlockSearchKeyBinding.isPressed() && !PathFinder.active) {
+			PathFinder.find(world, TungstenMod.TARGET);
+		}
+		if (TungstenMod.pauseKeyBinding.isPressed() && PathFinder.thread != null && PathFinder.thread.isAlive()) {
 			PathFinder.thread.interrupt();
+			TungstenMod.RENDERERS.clear();
+			TungstenMod.TEST.clear();
+		}
+		
+		if (TungstenMod.createGoalKeyBinding.isPressed()) {
+			TungstenMod.TARGET = MinecraftClient.getInstance().player.getPos();
 		}
 	}
 

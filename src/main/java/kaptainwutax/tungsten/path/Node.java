@@ -57,7 +57,7 @@ public class Node {
 //
 //			n = n.parent;
 //		}
-		if(n != null && n.agent.isInLava()) return new ArrayList<>();
+		if(n != null && n.agent.isInLava() || this.agent.isInLava()) return new ArrayList<>();
 
 //		if(!mismatch && i == 5) {
 //			return new ArrayList<>();
@@ -72,14 +72,32 @@ public class Node {
 //				for (boolean back : new boolean[]{true, false}) {
 					for (boolean right : new boolean[]{true, false}) {
 						for (boolean left : new boolean[]{true, false}) {
-								for (boolean sneak : new boolean[]{true, false}) {
+								for (boolean sneak : new boolean[]{false, true}) {
 										// for (float pitch : pitchValues) {
 //											for (float yaw : yawValues) {
 										for (float yaw = -180.0f; yaw < 180.0f; yaw += 22.5) {
 											for (boolean sprint : new boolean[]{true, false}) {
 												for (boolean jump : new boolean[]{true, false}) {
-													Node newNode = new Node(this, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw), new Color(0, 255, 0), this.cost + (jump ? sneak ? 4 :0.5 : sneak ? 4 : 2));
-													nodes.add(newNode);
+													try {
+														double addNodeCost = 1;
+														
+														boolean isMoving = (forward || right || left);
+
+														if (isMoving && sprint && jump && !sneak) addNodeCost -= 0.2;
+														if (sneak) addNodeCost += 2;
+														
+														Node newNode = new Node(this, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw), new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost + addNodeCost);
+														
+														newNode.cost += newNode.agent.isSubmergedInWater ? 50 : 0;
+														
+														nodes.add(newNode);
+													} catch (java.util.ConcurrentModificationException e) {
+														// TODO: handle exception
+														try {
+															Thread.sleep(2);
+														} catch (InterruptedException e1) {}
+													}
+													
 //											}
 											}
 										 }
@@ -90,6 +108,19 @@ public class Node {
 					}
 //				}
 			}
+			
+			nodes.sort((n1, n2) -> {
+				
+				double desiredYaw = PathFinder.calcYawFromVec3d(this.agent.getPos(), target);
+				
+				if (n1.agent.yaw - desiredYaw < 60 && n2.agent.yaw - desiredYaw < 60) {
+					return 0;
+				} else if (n1.agent.yaw - desiredYaw < 60) {
+					return -1;
+				}
+				return 1;
+				
+			});
 
 			return nodes;
 			
@@ -109,8 +140,17 @@ public class Node {
 			// };
 		} else {
 			List<Node> nodes = new ArrayList<Node>();
-			nodes.add(new Node(this, world, new PathInput(true, false, false, false, false,
-			false, true, this.agent.pitch, this.agent.yaw), new Color(0, 255, 255), this.cost + 1));
+			try {
+				Node newNode = new Node(this, world, new PathInput(true, false, false, false, false,
+						false, true, this.agent.pitch, this.agent.yaw), new Color(0, 255, 255), this.cost + 1);
+				newNode.cost += newNode.agent.isSubmergedInWater ? 50 : 0;
+				nodes.add(newNode);
+			} catch (java.util.ConcurrentModificationException e) {
+				// TODO: handle exception
+				try {
+					Thread.sleep(2);
+				} catch (InterruptedException e1) {}
+			}
 			return nodes;
 		}
 	}

@@ -3,18 +3,22 @@ package kaptainwutax.tungsten.path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.path.calculators.BinaryHeapOpenSet;
 import kaptainwutax.tungsten.render.Color;
 import kaptainwutax.tungsten.render.Cuboid;
 import kaptainwutax.tungsten.render.Line;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.text.Text;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldView;
@@ -27,14 +31,17 @@ public class PathFinder {
 	protected static final Node[] bestSoFar = new Node[COEFFICIENTS.length];
 	private static final double minimumImprovement = 0.21;
 	protected static final double MIN_DIST_PATH = 5;
+	protected static int NEXT_CLOSEST_BLOCKNODE_IDX = 1;
 	
 	
 	public static void find(WorldView world, Vec3d target) {
 		if(active)return;
 		active = true;
+		NEXT_CLOSEST_BLOCKNODE_IDX = 1;
 
 		thread = new Thread(() -> {
 			try {
+				NEXT_CLOSEST_BLOCKNODE_IDX = 1;
 				search(world, target);
 			} catch(Exception e) {
 				e.printStackTrace();
@@ -48,6 +55,7 @@ public class PathFinder {
 	private static void search(WorldView world, Vec3d target) {
 		boolean failing = true;
 		TungstenMod.RENDERERS.clear();
+		NEXT_CLOSEST_BLOCKNODE_IDX = 1;
 
 		ClientPlayerEntity player = Objects.requireNonNull(MinecraftClient.getInstance().player);
 		
@@ -57,25 +65,29 @@ public class PathFinder {
 		Node start = new Node(null, Agent.of(player), null, 0);
 		start.combinedCost = computeHeuristic(start.agent.getPos(), start.agent.onGround, target);
 		
+		List<BlockNode> blockPath = kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockSpacePathFinder.search(world, target);
+		
 		double[] bestHeuristicSoFar = new double[COEFFICIENTS.length];//keep track of the best node by the metric of (estimatedCostToGoal + cost / COEFFICIENTS[i])
 		for (int i = 0; i < bestHeuristicSoFar.length; i++) {
             bestHeuristicSoFar[i] = start.heuristic;
             bestSoFar[i] = start;
         }
-
 		BinaryHeapOpenSet openSet = new BinaryHeapOpenSet();
-		Set<Vec3d> closed = new HashSet<>();
+		Set<Vec3d> closed = new HashSet<>(); 
+		Set<BlockNode> achived = new HashSet<>();
 		openSet.insert(start);
 		while(!openSet.isEmpty()) {
 			TungstenMod.RENDERERS.clear();
+			renderBlockPath(blockPath);
 			Node next = openSet.removeLowest();
 			if (shouldNodeBeSkiped(next, target, closed, true)) continue;
 
 			
-			if(MinecraftClient.getInstance().options.socialInteractionsKey.isPressed()) break;
-			double minVel = 0.2;
-			if(next.agent.getPos().squaredDistanceTo(target) <= 0.4D && !failing /*|| !failing && (startTime + 5000) - System.currentTimeMillis() <= 0*/) {
+			if(TungstenMod.pauseKeyBinding.isPressed()) break;
+			double minVel = 0.04;
+			if(next.agent.getPos().squaredDistanceTo(target) <= 0.08D && !failing /*|| !failing && (startTime + 5000) - System.currentTimeMillis() <= 0*/) {
 				TungstenMod.RENDERERS.clear();
+				renderBlockPath(blockPath);
 				Node n = next;
 				List<Node> path = new ArrayList<>();
 
@@ -101,11 +113,11 @@ public class PathFinder {
 			 TungstenMod.RENDERERS.add(new Cuboid(next.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), Color.RED));
 			 
 //			 try {
-//                 Thread.sleep(600);
+//                 if(next.agent.onGround) Thread.sleep(200);
 //             } catch (InterruptedException ignored) {}
 			 
 			for(Node child : next.getChildren(world, target)) {
-				if (shouldNodeBeSkiped(child, target, closed)) continue;
+				if (!child.agent.isSubmergedInWater && !child.agent.isClimbing(world) && shouldNodeBeSkiped(child, target, closed)) continue;
 //				if(closed.contains(child.agent.getPos()))continue;
 				
 				// DUMB HEURISTIC CALC
@@ -124,7 +136,7 @@ public class PathFinder {
 				
 				// AStar? HEURISTIC CALC
 //				if (next.agent.getPos().distanceTo(child.agent.getPos()) < 0.2) continue;
-				updateNode(next, child, target);
+				updateNode(next, child, target, blockPath);
 				
                 if (child.isOpen()) {
                     openSet.update(child);
@@ -141,6 +153,7 @@ public class PathFinder {
 				TungstenMod.RENDERERS.add(new Cuboid(child.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), child.color));
 			}
 		}
+		if (openSet.isEmpty()) player.sendMessage(Text.literal("Ran out of nodes!"));
 	}
 	
 	private static boolean shouldNodeBeSkiped(Node n, Vec3d target, Set<Vec3d> closed) {
@@ -148,7 +161,7 @@ public class PathFinder {
 	}
 	
 	private static boolean shouldNodeBeSkiped(Node n, Vec3d target, Set<Vec3d> closed, boolean addToClosed) {
-		if (n.agent.getPos().distanceTo(target) < 2.0) {
+		if (n.agent.getPos().distanceTo(target) < 2.0 /*|| n.agent.isSubmergedInWater*/ /*|| n.agent.isClimbing(MinecraftClient.getInstance().world)*/) {
 			if(closed.contains(new Vec3d(Math.round(n.agent.getPos().x*1000), Math.round(n.agent.getPos().y * 1000), Math.round(n.agent.getPos().z*1000)))) return true;
 			if (addToClosed) closed.add(new Vec3d(Math.round(n.agent.getPos().x*1000), Math.round(n.agent.getPos().y * 1000), Math.round(n.agent.getPos().z*1000)));
 		} else if(closed.contains(new Vec3d(Math.round(n.agent.getPos().x*10), Math.round(n.agent.getPos().y * 10), Math.round(n.agent.getPos().z*10)))) return true;
@@ -159,29 +172,78 @@ public class PathFinder {
 	
 	private static double computeHeuristic(Vec3d position, boolean onGround, Vec3d target) {
 	    double dx = position.x - target.x;
-	    double dy = (position.y - target.y);
-//	    if (onGround || dy < 1.6 && dy > -1.6) dy = 0;
-	    
+	    double dy = 0;
+	    if (target.y != Double.MIN_VALUE) {
+		    dy = (position.y - target.y)*8;
+		    if (!onGround || dy < 1.6 && dy > -1.6) dy = 0;
+	    }
 	    double dz = position.z - target.z;
-	    return (Math.sqrt(dx * dx + dy * dy + dz * dz)) * 33.563;
+	    return (Math.sqrt(dx * dx + dy * dy + dz * dz));
 	}
 	
-	private static void updateNode(Node current, Node child, Vec3d target) {
+	private static void updateNode(Node current, Node child, Vec3d target, List<BlockNode> blockPath) {
 	    Vec3d childPos = child.agent.getPos();
 
 	    double collisionScore = 0;
-	    double tentativeCost = current.cost + 1; // Assuming uniform cost for each step
+	    double tentativeCost = current.cost + 1 + (child.agent.isSubmergedInWater ? -50^-20 : 0); // Assuming uniform cost for each step
 	    if (child.agent.horizontalCollision) {
 	        collisionScore += 25 + (Math.abs(current.agent.velZ - child.agent.velZ) + Math.abs(current.agent.velX - child.agent.velX)) * 120;
 	    }
+	    if (child.agent.isSubmergedInWater) {
+	    	collisionScore *= 20000;
+	    }
+	    if (child.agent.isClimbing(MinecraftClient.getInstance().world)) {
+	    	collisionScore *= 20000;
+	    }
+	    if (child.agent.slimeBounce) {
+	    	collisionScore -= 20000;
+	    }
 
 	    double estimatedCostToGoal = computeHeuristic(childPos, child.agent.onGround, target) + collisionScore;
+	    if (blockPath != null) {
+	    	int closestPosIDX = findClosestPositionIDX(new BlockPos(child.agent.blockX, child.agent.blockY, child.agent.blockZ), blockPath);
+	    	BlockNode closestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX);
+	    	if (child.agent.onGround && /*closestPosIDX+1 > NEXT_CLOSEST_BLOCKNODE_IDX &&*/ closestPosIDX +1 < blockPath.size()) {
+	    		NEXT_CLOSEST_BLOCKNODE_IDX = closestPosIDX+1;
+		    	closestPos = blockPath.get(closestPosIDX+1);
+	    	}
+	    	    	
+	    	estimatedCostToGoal +=  computeHeuristic(childPos, true, new Vec3d(closestPos.x + 0.5, closestPos.y, closestPos.z + 0.5)) * 60.5 - closestPosIDX * 200;
+	    }
 
 	    child.parent = current;
 	    child.cost = tentativeCost;
 	    child.estimatedCostToGoal = estimatedCostToGoal;
 	    child.combinedCost = tentativeCost + estimatedCostToGoal;
 	}
+	
+	private static BlockNode findClosestPosition(BlockPos current, List<BlockNode> positions) {
+		return positions.get(findClosestPositionIDX(current, positions));
+	}
+	private static int findClosestPositionIDX(BlockPos current, List<BlockNode> positions) {
+        if (positions == null || positions.isEmpty()) {
+            throw new IllegalArgumentException("The list of positions must not be null or empty.");
+        }
+
+        int closestIDX = 1;
+        BlockNode closest = positions.get(closestIDX);
+        double minDistance = current.getSquaredDistance(closest.getPos());
+        
+        for (int i = 1; i < positions.size(); i++) {
+        	BlockNode position = positions.get(i);
+//			if (i % 5 != 0) {
+//        		continue;
+//        	}
+            double distance = current.getSquaredDistance(position.getPos());
+            if (distance < minDistance) {
+                minDistance = distance;
+                closest = position;
+                closestIDX = i;
+            }
+		}
+        
+        return closestIDX;
+    }
 	
 	private static boolean updateBestSoFar(Node child, double[] bestHeuristicSoFar, Vec3d target) {
 		boolean failing = false;
@@ -227,6 +289,18 @@ public class PathFinder {
             return Direction.SOUTH;
         }
     }
+	
+	private static void renderBlockPath(List<BlockNode> nodes) {
+		for (Iterator<BlockNode> iterator = nodes.iterator(); iterator.hasNext();) {
+			BlockNode node = iterator.next();
+			
+			if (node.previous != null)
+			TungstenMod.RENDERERS.add(new Line(new Vec3d(node.previous.x + 0.5, node.previous.y + 0.1, node.previous.z + 0.5), new Vec3d(node.x + 0.5, node.y + 0.1, node.z + 0.5), Color.RED));
+            TungstenMod.RENDERERS.add(new Cuboid(node.getPos(), new Vec3d(1.0D, 1.0D, 1.0D), 
+            		(nodes.get(NEXT_CLOSEST_BLOCKNODE_IDX).equals(node)) ? Color.WHITE : Color.BLUE
+            		));
+	}
+	}
 	
 	private static void renderPathSoFar(Node n) {
 		int i = 0;
