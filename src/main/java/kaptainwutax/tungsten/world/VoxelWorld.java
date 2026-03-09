@@ -19,6 +19,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.WorldView;
+import net.minecraft.world.attribute.EnvironmentAttributeAccess;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeAccess;
 import net.minecraft.world.border.WorldBorder;
@@ -147,6 +148,12 @@ public class VoxelWorld implements WorldView {
 
 	@Override
 	public FeatureSet getEnabledFeatures() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public EnvironmentAttributeAccess getEnvironmentAttributes() {
 		// TODO Auto-generated method stub
 		return null;
 	}

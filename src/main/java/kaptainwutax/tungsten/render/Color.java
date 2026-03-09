@@ -40,5 +40,15 @@ public class Color {
 	public float getFBlue() {
 		return this.getBlue() / 255.0F;
 	}
+	
+	/**
+     * Returns ARGB color as an integer in the format 0xAARRGGBB.
+     * 
+     * @param alpha The alpha value (0-255).
+     * @return The ARGB value as an integer.
+     */
+	public int toARGB(int alpha) {
+        return (alpha << 24) | (this.red << 16) | (this.green << 8) | this.blue;
+    }
 
 }

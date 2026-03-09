@@ -75,6 +75,7 @@ import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.WorldView;
+import net.minecraft.world.dimension.DimensionTypes;
 
 public class Agent {
 
@@ -243,7 +244,7 @@ public class Agent {
     public boolean updateWaterState(WorldView world) {
         this.fluidHeight.clear();
         this.checkWaterState(world);
-        double d = world.getDimension().ultrawarm() ? 0.007D : 0.0023333333333333335D;
+        double d = world.getDimension().toString().equals(DimensionTypes.THE_NETHER.toString()) ? 0.007D : 0.0023333333333333335D;
         boolean bl = this.updateMovementInFluid(world, FluidTags.LAVA, d);
         return this.touchingWater || bl;
     }
@@ -1492,12 +1493,12 @@ public class Agent {
         
         if(this.posX != player.getX() || this.posY != player.getY() || this.posZ != player.getZ()) {
             values.add(String.format("Position mismatch (%s, %s, %s) vs (%s, %s, %s)",
-                player.getPos().x == this.posX ? "x" : player.getPos().x,
-                player.getPos().y == this.posY ? "y" : player.getPos().y,
-                player.getPos().z == this.posZ ? "z" : player.getPos().z,
-                player.getPos().x == this.posX ? "x" : this.posX,
-                player.getPos().y == this.posY ? "y" : this.posY,
-                player.getPos().z == this.posZ ? "z" : this.posZ));
+                player.getEntityPos().x == this.posX ? "x" : player.getEntityPos().x,
+                player.getEntityPos().y == this.posY ? "y" : player.getEntityPos().y,
+                player.getEntityPos().z == this.posZ ? "z" : player.getEntityPos().z,
+                player.getEntityPos().x == this.posX ? "x" : this.posX,
+                player.getEntityPos().y == this.posY ? "y" : this.posY,
+                player.getEntityPos().z == this.posZ ? "z" : this.posZ));
             // I know this is probably a really stupid way to fix a mismatch but server doesnt seem to care so I'm doing it anyway!
             if (TungstenModDataContainer.EXECUTOR.isRunning()) {
             	player.setPosition(this.posX, this.posY, this.posZ);
@@ -1531,7 +1532,7 @@ public class Agent {
             	player.setVelocity(this.velX, this.velY, this.velZ);
             	Node node = TungstenModDataContainer.EXECUTOR.getCurrentNode();
             	if (TungstenModRenderContainer.ERROR.size() > 1000) TungstenModRenderContainer.ERROR.clear();
-                if (node != null && node.agent.getPos().distanceTo(player.getPos()) > 0.78) {
+                if (node != null && node.agent.getPos().distanceTo(player.getEntityPos()) > 0.78) {
 //                    TungstenModDataContainer.EXECUTOR.stop = true;
 ////                    TungstenModDataContainer.PATHFINDER.stop.set(true);
 ////                    player.setVelocity(0, 0, 0);
@@ -1549,7 +1550,7 @@ public class Agent {
 //                        TungstenModDataContainer.PATHFINDER.find(TungstenModDataContainer.world, TungstenMod.TARGET, player, Optional.of(TungstenModDataContainer.EXECUTOR.blockPath));
 //                    }
                     RenderHelper.renderNode(node, TungstenModRenderContainer.ERROR);
-                    TungstenModRenderContainer.ERROR.add(new Cuboid(player.getPos(), new Vec3d(0.1, 0.5, 0.1), Color.RED));
+                    TungstenModRenderContainer.ERROR.add(new Cuboid(player.getEntityPos(), new Vec3d(0.1, 0.5, 0.1), Color.RED));
                 }
             }
         }
