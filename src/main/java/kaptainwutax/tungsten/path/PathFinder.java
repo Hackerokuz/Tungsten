@@ -3,7 +3,6 @@ package kaptainwutax.tungsten.path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
@@ -13,7 +12,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
@@ -22,7 +20,6 @@ import java.util.stream.Collectors;
 import com.google.common.util.concurrent.AtomicDoubleArray;
 
 import kaptainwutax.tungsten.Debug;
-import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.TungstenModDataContainer;
 import kaptainwutax.tungsten.TungstenModRenderContainer;
 import kaptainwutax.tungsten.agent.Agent;
@@ -32,7 +29,6 @@ import kaptainwutax.tungsten.helpers.BlockShapeChecker;
 import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.blockPath.BlockPosShifter;
-import kaptainwutax.tungsten.helpers.movement.StreightMovementHelper;
 import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.path.calculators.BinaryHeapOpenSet;
@@ -49,8 +45,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldView;
 import org.jspecify.annotations.NonNull;
-
-import javax.swing.*;
 
 public class PathFinder {
 
@@ -787,7 +781,7 @@ public class PathFinder {
         return true;
     }
     
-    private boolean filterChidren(Node child, BlockNode lastBlockNode, BlockNode nextBlockNode, boolean isSmallBlock, WorldView world) {
+    private boolean filterChildren(Node child, BlockNode lastBlockNode, BlockNode nextBlockNode, boolean isSmallBlock, WorldView world) {
     	boolean isLadder = nextBlockNode.getBlockState(world).getBlock() instanceof LadderBlock;
     	boolean isLadderBelow = world.getBlockState(nextBlockNode.getBlockPos().down()).getBlock() instanceof LadderBlock;
     	if (isLadder || isLadderBelow) return child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 3.6);
@@ -854,12 +848,12 @@ public class PathFinder {
 						        boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
 						        boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
 				
-						        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.294) || (isSmallBlock && distance < 0.2)) {
+						        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
 						            return null; // too close to existing child
 						        }
 						    }
 							
-							boolean skip = filterChidren(child, lastBlockNode, nextBlockNode, isSmallBlock, world);
+							boolean skip = filterChildren(child, lastBlockNode, nextBlockNode, isSmallBlock, world);
 							
 							if (skip || checkForFallDamage(child, world)) {
 								return null;
@@ -889,7 +883,7 @@ public class PathFinder {
 				        }
 				    }
 					
-					boolean skip = filterChidren(child, lastBlockNode, nextBlockNode, isSmallBlock, world);
+					boolean skip = filterChildren(child, lastBlockNode, nextBlockNode, isSmallBlock, world);
 					
 					if (skip || checkForFallDamage(child, world)) {
 						return null;
