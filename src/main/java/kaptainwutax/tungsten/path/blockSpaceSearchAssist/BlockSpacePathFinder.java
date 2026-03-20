@@ -1,11 +1,6 @@
 package kaptainwutax.tungsten.path.blockSpaceSearchAssist;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenModDataContainer;
@@ -16,6 +11,8 @@ import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.movement.StreightMovementHelper;
 import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.path.calculators.ActionCosts;
+import kaptainwutax.tungsten.render.Color;
+import kaptainwutax.tungsten.render.Cuboid;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LadderBlock;
@@ -333,22 +330,13 @@ public class BlockSpacePathFinder {
 			BlockNode p = path.get(j-1);
 
 	        boolean canGetFromLastNToCurrent = StreightMovementHelper.isPossible(TungstenModDataContainer.world, pi.getBlockPos(), pj.getBlockPos());
-//	        boolean canGetFromLastNToCurrent = StreightMovementHelper.isPossible(world, lastN.getBlockPos(), n.getBlockPos());
 	        double heightDiff = p.previous == null ? 0 : DistanceCalculator.getJumpHeight(p.previous.getPos(true).getY(), p.getPos(true).getY());
-//	        double distanceFromLastToCurrentNode = lastBlockNode.getPos(true).distanceTo(blockNode.getPos(true));
-	        if (canGetFromLastNToCurrent && heightDiff <= 0 && p.previous.getPos(true).distanceTo(p.getPos(true)) <= 1.84) {
-//	        	RenderHelper.renderBlockPath(path, j-1);
-//	        	try {
-//					Thread.sleep(500);
-//				} catch (InterruptedException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
+	        if (canGetFromLastNToCurrent && heightDiff == 0 && DistanceCalculator.getEuclideanDistance(Objects.requireNonNull(p.previous).getPos(true), p.getPos(true)) < 3) {
 	        	path.remove(j-1);
 	        } else {
 	        	i = j-1;
+				j++;
 	        }
-	        j++;
 		}
 		return path;
 	}
