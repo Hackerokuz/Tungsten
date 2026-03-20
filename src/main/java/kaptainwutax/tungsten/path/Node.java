@@ -94,7 +94,6 @@ public class Node {
 		    if (shouldAddYaw) result = result + (Math.round(this.input.yaw / 45f));
 		    result = result + (Math.round(this.agent.velX*10));
 		    result = result + (Math.round(this.agent.velZ*10));
-			 result = result + (this.agent.getPos().hashCode());
 		 }
 //	    if (round > 1) {
 //		    result = 34L * result + Double.hashCode(roundToPrecision(this.agent.getPos().x, round));
