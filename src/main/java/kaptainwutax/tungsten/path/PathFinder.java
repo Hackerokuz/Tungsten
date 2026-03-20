@@ -101,9 +101,7 @@ public class PathFinder {
                 }
                 Thread.sleep(500);
                 NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
-                if (blockPath.isPresent()) {
-                    NEXT_CLOSEST_BLOCKNODE_IDX.set(findClosestPositionIDX(world, player.getBlockPos(), blockPath.get()));
-                }
+                blockPath.ifPresent(blockNodes -> NEXT_CLOSEST_BLOCKNODE_IDX.set(findClosestPositionIDX(world, player.getBlockPos(), blockNodes)));
                 search(world, target, player);
             } catch(Exception e) {
                 e.printStackTrace();
@@ -168,7 +166,7 @@ public class PathFinder {
 	    TungstenModRenderContainer.RENDERERS.clear();
 	
 	    long startTime = System.currentTimeMillis();
-	    long primaryTimeoutTime = startTime + 112000L;
+	    long primaryTimeoutTime = startTime + 15000L;
 		numNodesConsidered.set(0);
 	    int timeCheckInterval = 1 << 3;
 	    double minVelocity = BlockStateChecker.isAnyWater(world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ()))) ? 0.2 :  0.07;
@@ -488,13 +486,16 @@ public class PathFinder {
 	    if (target.y != Double.MIN_VALUE) {
 		    dy = (position.y - target.y);//* 4.8;//*16;
 //			Debug.logMessage(dy+"");
-		    if (!onGround || dy > 0 && dy < 1.4) dy = 0;
-			dy *= 4.8;
+//		    if (!onGround || dy > 0 && dy < 1.4) dy = 0;
+//			dy *= 1.8;
 	    }
 	    double dz = (position.z - target.z)*xzMultiplier;
+
+		double realTargetDist = DistanceCalculator.getEuclideanDistance(position, realTarget);
+
 	    return (Math.sqrt(dx * dx + dy * dy + dz * dz) * 1.8
-	    		 + (((blockPath.map(blockNodes -> blockNodes.size() - NEXT_CLOSEST_BLOCKNODE_IDX.get()).orElse(0))) * 80)
-	    		//+ (DistanceCalculator.getEuclideanDistance(position, realTarget) * 0.02)
+//	    		 + (((blockPath.map(blockNodes -> blockNodes.size() - NEXT_CLOSEST_BLOCKNODE_IDX.get()).orElse(0))) * 80)
+	    		+ (realTargetDist * realTargetDist < 2 ? 2.5 : 1.5)
 	    		);
 	}
 	
@@ -638,7 +639,7 @@ public class PathFinder {
     		return node.agent.getPos().squaredDistanceTo(target) <= 0.9D;
     	if (world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ())).getBlock() instanceof LadderBlock)
     		return node.agent.getPos().squaredDistanceTo(target) <= 0.9D;
-        return node.agent.getPos().squaredDistanceTo(target) <= 0.2D && !failing;
+        return node.agent.getPos().squaredDistanceTo(target) <= 0.2D;
     }
 
     private boolean tryExecutePath(Node node, Vec3d target, double minVelocity) {
@@ -1115,26 +1116,23 @@ public class PathFinder {
         boolean validClosedTrapDoorProximity = isBelowClosedTrapDoor && nodePos.isWithinRangeOf(closestPos.getPos(true), 0.88, 2.2);
         
         boolean isBlockAboveSolid = BlockShapeChecker.getShapeVolume(nodeBlockPos.up(2), world) > 0;
-        
-        // General position conditions
-        boolean validStandardProximity = !isLadder && !isBelowLadder && !isBelowGlassPane
-            && !isBlockBelowTall
-            && (isBlockAboveSolid
-        	&&	distanceToClosestPos < (isRunningLongDist ? 1.80 : 0.85)
-            || !isBlockAboveSolid
-            && (
-            		distanceToClosestPos < (isRunningLongDist ? 1.80 : 1.25)
-            && heightDiff < 1.8
-            && heightDiff > 1
-            ||
-            node.agent.onGround
-            && heightDiff < 0.8
-            && heightDiff >= 0
-            && distanceToClosestPos < (isRunningLongDist ? 1.80 : 1.25)
-            || isCarpet && heightDiff < 1
-            && heightDiff >= -1
-            && distanceToClosestPos < 2
-            ));
+
+		// Check for solid block above and distance constraints
+		boolean solidBlockAboveCheck = isBlockAboveSolid && distanceToClosestPos < (isRunningLongDist ? 1.80 : 0.85);
+
+		// Check for no solid block above and nested conditions
+		boolean noSolidBlockAboveCheck = !isBlockAboveSolid && (
+				// Condition 1: Distance check with height difference constraints
+				(distanceToClosestPos < (isRunningLongDist ? 1.80 : 1.45) && heightDiff < 1.8 && heightDiff > 0.7)
+
+				// Condition 2: On ground height checks
+				|| (node.agent.onGround && heightDiff < 0.8 && heightDiff >= 0 && distanceToClosestPos < (isRunningLongDist ? 1.80 : 1.45))
+
+				// Condition 3: Carpet check with height tolerance
+				|| (isCarpet && heightDiff < 1 && heightDiff >= -1 && distanceToClosestPos < 2)
+		);
+
+		boolean validStandardProximity = solidBlockAboveCheck || noSolidBlockAboveCheck;
 
         // Glass pane conditions
         boolean validGlassPaneProximity = isBelowGlassPane && distanceToClosestPos < 0.5;
@@ -1176,7 +1174,7 @@ public class PathFinder {
 //			}
         }
     	if (closestPosIDX+1 > NEXT_CLOSEST_BLOCKNODE_IDX.get() && closestPosIDX +1 < blockPath.size()
-    			&&  heightDiff <= 1
+    			&&  heightDiff <= 1.3
     			&& ( validWaterProximity || !isConnected
 //    			&& BlockNode.wasCleared(world, nodeBlockPos, blockPath.get(closestPosIDX+1).getBlockPos())
 				&& agentOnGroundOrClimbingOrOnTallBlock

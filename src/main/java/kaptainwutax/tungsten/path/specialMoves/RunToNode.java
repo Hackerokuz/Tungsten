@@ -26,7 +26,7 @@ public class RunToNode {
 		double distance = DistanceCalculator.getHorizontalEuclideanDistance(agent.getPos(), nextBlockNode.getPos(true));
 		double closestDistance = Double.MAX_VALUE;
 	    Node newNode = new Node(parent, world, new PathInput(false, false, false, false, false, false, true, agent.pitch, desiredYaw),
-	    				new Color(0, 255, 150), parent.cost + 0.5D);
+	    				new Color(0, 255, 150), parent.cost + 0.85D);
 	    Node lastHigheastNodeSinceGround = null;
 	    boolean jump = false;
         int limit = 0;
@@ -55,10 +55,9 @@ public class RunToNode {
         		break;
         	}
 
-			if (newNode.agent.onGround || lastHigheastNodeSinceGround == null || lastHigheastNodeSinceGround != null && lastHigheastNodeSinceGround.agent.getPos().y < newNode.agent.getPos().y) {
+			if (newNode.agent.onGround || lastHigheastNodeSinceGround == null || lastHigheastNodeSinceGround.agent.getPos().y < newNode.agent.getPos().y) {
 				lastHigheastNodeSinceGround = newNode;
-			} else if (lastHigheastNodeSinceGround != null
-					&& (!TungstenModDataContainer.ignoreFallDamage
+			} else if ((!TungstenModDataContainer.ignoreFallDamage
 					&& !BlockStateChecker.isAnyWater(world.getBlockState(newNode.agent.getLandingPos(world))))
 					&& DistanceCalculator.getJumpHeight(lastHigheastNodeSinceGround.agent.getPos().y, newNode.agent.getPos().y) < -3
 					|| !TungstenModDataContainer.ignoreFallDamage && newNode.agent.isDamaged) {
@@ -74,7 +73,7 @@ public class RunToNode {
 					newNode = newNode.parent;
 				}
 			} else if (newNode.agent.horizontalCollision) {
-				while (newNode.agent.horizontalCollision) {
+				while (newNode.agent.horizontalCollision && newNode.parent != null) {
 					newNode = newNode.parent;
 				}
 				break;

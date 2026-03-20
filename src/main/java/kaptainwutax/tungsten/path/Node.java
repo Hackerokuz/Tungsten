@@ -83,17 +83,18 @@ public class Node {
 	 public int hashCode(int round, boolean shouldAddYaw) {
 		 long result = 3241;
 		 if (this.input != null) {
-		 	result = 2 * Boolean.hashCode(this.input.forward);
-		    result = result + 3 * Boolean.hashCode(this.input.back);
-		    result = result + 5 * Boolean.hashCode(this.input.right);
-		    result = result + 11 * Boolean.hashCode(this.input.left);
-		    result = result + 13 * Boolean.hashCode(this.input.jump);
-		    result = result + 17 * Boolean.hashCode(this.input.sneak);
-		    result = result + 19 * Boolean.hashCode(this.input.sprint);
+		 	result = 2L * Boolean.hashCode(this.input.forward);
+		    result = result + 3L * Boolean.hashCode(this.input.back);
+		    result = result + 5L * Boolean.hashCode(this.input.right);
+		    result = result + 11L * Boolean.hashCode(this.input.left);
+		    result = result + 13L * Boolean.hashCode(this.input.jump);
+		    result = result + 17L * Boolean.hashCode(this.input.sneak);
+		    result = result + 19L * Boolean.hashCode(this.input.sprint);
 //		    result = result + (Math.round(this.input.pitch));
-		    if (shouldAddYaw) result = result + (Math.round(this.input.yaw));
+		    if (shouldAddYaw) result = result + (Math.round(this.input.yaw / 45f));
 		    result = result + (Math.round(this.agent.velX*10));
 		    result = result + (Math.round(this.agent.velZ*10));
+			 result = result + (this.agent.getPos().hashCode());
 		 }
 //	    if (round > 1) {
 //		    result = 34L * result + Double.hashCode(roundToPrecision(this.agent.getPos().x, round));
@@ -234,7 +235,7 @@ public class Node {
 	    		&& nextBlockNode.getBlockPos().getX() == agent.blockX 
 	    		&& nextBlockNode.getBlockPos().getZ() == agent.blockZ) {
 	    	Direction dir = state.get(Properties.HORIZONTAL_FACING);
-	    	double desiredYaw = DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true).offset(dir.getOpposite(), 1)) + MathHelper.roundToPrecision(Math.random(), 2) / 1000000;
+	    	double desiredYaw = DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true).offset(dir.getOpposite(), 1)) /*+ MathHelper.roundToPrecision(Math.random(), 2) / 1000000*/;
 	    	if (nextBlockNode.getBlockPos().getY() > agent.blockY) {
 		    	createAndAddNode(world, nextBlockNode, nodes, true, false, false, false, false, true, (float) desiredYaw, isDoingLongJump, isCloseToBlockNode);
 		    	return;
@@ -246,13 +247,13 @@ public class Node {
 	    }
 	    float desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
 	    float a = 134.4f;
-	    float fromYaw = desiredYaw-a<-180.0f ? -180f: desiredYaw-a;
-	    float toYaw = desiredYaw+a > 180f ? 180f : desiredYaw+a;
+	    float fromYaw = Math.max(desiredYaw - a, -180.0f);
+	    float toYaw = Math.min(desiredYaw + a, 180f);
 	    for (boolean forward : new boolean[]{true, false}) {
 	        for (boolean right : new boolean[]{true, false}) {
 	            for (boolean left : new boolean[]{true, false}) {
 //	                for (boolean sneak : new boolean[]{false, true}) {
-	                    for (float yaw = fromYaw; yaw < toYaw; yaw += 22.5 + Math.random()) {
+	                    for (float yaw = fromYaw; yaw < toYaw; yaw += 22.5f) {
 	                        for (boolean sprint : new boolean[]{true, false}) {
 	                        	if (!this.agent.canSprint() && sprint) continue;
 	                            if (( ((right || left) && !forward)) && sprint) continue;

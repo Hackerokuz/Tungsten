@@ -43,7 +43,7 @@ public class CornerJump {
         boolean jump = false;
         int limit = 0;
         desiredYaw += reverse ? -90f : 90f;
-        while (limit < 18 && jump == false && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-2) {
+        while (limit < 18 && !jump && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-2) {
             Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.04, 0, -0.04);
         	limit++;
         	Stream<VoxelShape> blockCollisions = Streams.stream(newNode.agent.getBlockCollisions(TungstenModDataContainer.world, adjustedBox));

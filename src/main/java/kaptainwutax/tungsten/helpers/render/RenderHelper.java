@@ -114,6 +114,7 @@ public class RenderHelper {
 //		Vec3d parentPos = parent.getPos(true);
 		TungstenModRenderContainer.RENDERERS.add(new Line(new Vec3d(parent.x + 0.5, parent.y + 0.1, parent.z + 0.5), new Vec3d(child.x + 0.5, child.y + 0.1, child.z + 0.5), Color.RED));
 		TungstenModRenderContainer.RENDERERS.add(new Cuboid(child.getPos(), new Vec3d(1.0D, 1.0D, 1.0D), Color.BLUE));
+		TungstenModRenderContainer.RENDERERS.add(new Cuboid(parent.getPos(), new Vec3d(1.0D, 1.0D, 1.0D), Color.BLUE));
 	}
 	
 	public static void clearRenderers() {
