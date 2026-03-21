@@ -96,6 +96,14 @@ public class RenderHelper {
 	public static void renderNode(Node n) {
 		TungstenModRenderContainer.RENDERERS.add(new Cuboid(n.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), n.color));
 	}
+
+	public static void renderNode(BlockNode n) {
+		TungstenModRenderContainer.RENDERERS.add(new Cuboid(n.getPos(true).subtract(0.1, 0, 0.1), new Vec3d(0.2D, 0.2D, 0.2D), Color.BLUE));
+	}
+
+	public static void renderNode(BlockNode n, Color color) {
+		TungstenModRenderContainer.RENDERERS.add(new Cuboid(n.getPos(true).subtract(0.1, 0, 0.1), new Vec3d(0.2D, 0.2D, 0.2D), color));
+	}
 	
 	public static void renderNode(Node n, Collection<Renderer> renderer) {
 		renderer.add(new Cuboid(n.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), n.color));
