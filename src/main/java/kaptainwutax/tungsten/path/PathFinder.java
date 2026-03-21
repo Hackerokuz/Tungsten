@@ -721,9 +721,12 @@ public class PathFinder {
         if (now < primaryTimeoutTime) return false;
         Optional<List<Node>> result = PathFinder.bestSoFar(true, 0, start, TungstenModDataContainer.PATHFINDER.TARGET);
 
-	      if (!result.isPresent() || result.get().size() < 46 || !(result.get().getLast().agent.onGround && result.get().getLast().agent.touchingWater) || result.get().getLast().agent.isClimbing(TungstenModDataContainer.world) || result.get().getLast().agent.getPos().distanceTo(result.get().getFirst().agent.getPos()) < 3.5) {
-	          return false;
-	      }
+		  if (result.isEmpty() || result.get().size() < 46
+//				  || !(result.get().getLast().agent.onGround && result.get().getLast().agent.touchingWater)
+				  || result.get().getLast().agent.isClimbing(TungstenModDataContainer.world)
+				  || result.get().getLast().agent.getPos().distanceTo(result.get().getFirst().agent.getPos()) < 3.5) {
+			  return false;
+		  }
 //        if (player.getPos().distanceTo(result.get().getFirst().agent.getPos()) < 1 && next.agent.getPos().distanceTo(target) > 1) {
 	    if (setCurrentPath(target, start, player)) {
 	    	Debug.logMessage("Time ran out!");
@@ -736,7 +739,7 @@ public class PathFinder {
     private static boolean setCurrentPath(Vec3d target, Node start, PlayerEntity player) {
         Optional<List<Node>> result = PathFinder.bestSoFar(true, 0, start, TungstenModDataContainer.PATHFINDER.TARGET);
 
-        if (!result.isPresent()) {
+        if (result.isEmpty()) {
             return false;
         }
         Node newStart = null;
@@ -752,7 +755,7 @@ public class PathFinder {
         TungstenModDataContainer.EXECUTOR.blockPath = blockPath.orElseGet(null);
 //        RenderHelper.renderPathCurrentlyExecuted();
         for (int i = 0; i < COEFFICIENTS.length; i++) {
-	        TungstenModDataContainer.PATHFINDER.bestSoFar.set(i, null);
+	        PathFinder.bestSoFar.set(i, null);
 		}
         TungstenModDataContainer.PATHFINDER.clearParentsForBestSoFar(newStart);
         TungstenModDataContainer.PATHFINDER.closed.clear();
