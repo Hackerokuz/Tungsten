@@ -248,7 +248,7 @@ public class BlockSpacePathFinder {
 						path.add(n);
 //						if (n.previous != null) path.add(n.previous);
 //				}
-				if (heightDiff <= 0 && lastN.getPos(true).distanceTo(n.getPos(true)) <= 1.44) path = stringPull(path);
+//				if (heightDiff <= 0 && lastN.getPos(true).distanceTo(n.getPos(true)) <= 1.44) path = stringPull(path);
 				    	
 			n = n.previous;
 		}
@@ -331,7 +331,18 @@ public class BlockSpacePathFinder {
 
 	        boolean canGetFromLastNToCurrent = StreightMovementHelper.isPossible(TungstenModDataContainer.world, pi.getBlockPos(), pj.getBlockPos());
 	        double heightDiff = p.previous == null ? 0 : DistanceCalculator.getJumpHeight(p.previous.getPos(true).getY(), p.getPos(true).getY());
-	        if (canGetFromLastNToCurrent && heightDiff == 0 && DistanceCalculator.getEuclideanDistance(Objects.requireNonNull(p.previous).getPos(true), p.getPos(true)) < 3) {
+			double dist =  DistanceCalculator.getEuclideanDistance(p.getPos(true), pj.getPos(true));
+//			RenderHelper.clearRenderers();
+//			RenderHelper.renderNode(p, Color.RED);
+//			RenderHelper.renderNode(pi, Color.BLUE);
+//			RenderHelper.renderNode(pj.previous, Color.GREEN);
+//			RenderHelper.renderNode(pj, Color.WHITE);
+//			try {
+//				Thread.sleep(400);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+	        if (canGetFromLastNToCurrent && heightDiff == 0 && !p.isDoingJump()) {
 	        	path.remove(j-1);
 	        } else {
 	        	i = j-1;
