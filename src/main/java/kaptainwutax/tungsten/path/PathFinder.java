@@ -488,7 +488,7 @@ public class PathFinder {
 		double realTargetDist = DistanceCalculator.getEuclideanDistance(position, realTarget);
 
 	    return (Math.sqrt(dx * dx + dy * dy + dz * dz) * 1.8
-//	    		 + (((blockPath.map(blockNodes -> blockNodes.size() - NEXT_CLOSEST_BLOCKNODE_IDX.get()).orElse(0))) * 80)
+	    		 + (((blockPath.map(blockNodes -> blockNodes.size() - NEXT_CLOSEST_BLOCKNODE_IDX.get()).orElse(0))) * 0.8)
 	    		+ (realTargetDist * realTargetDist < 2 ? 2.5 : 1.5)
 	    		);
 	}
