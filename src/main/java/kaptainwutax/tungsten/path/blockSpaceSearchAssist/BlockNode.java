@@ -100,6 +100,7 @@ public class BlockNode {
 	private boolean isDoingNeo = false;
 	private Direction neoSide;
 	private boolean isDoingCornerJump = false;
+	private boolean isDoingJump = false;
 
 	/**
 	 * Where is this node in the array flattenization of the binary heap? Needed for
@@ -217,6 +218,10 @@ public class BlockNode {
 		}
 		chachedPos = new Vec3d(x, y, z);
 		return chachedPos;
+	}
+
+	public boolean isDoingJump() {
+		return isDoingJump;
 	}
 
 	public boolean isDoingLongJump(WorldView world) {
@@ -373,6 +378,7 @@ public class BlockNode {
 
                     BlockNode newNode = new BlockNode(this.x + px, this.y + py, this.z + pz, goal, this,
                             ActionCosts.WALK_ONE_BLOCK_COST, this.player);
+					newNode.isDoingJump = Math.sqrt(dx * dx + dz * dz) > 2;
                     nodes.add(newNode);
                 }
             }
