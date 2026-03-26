@@ -462,15 +462,15 @@ public class PathFinder {
 	
 	private static double computeHeuristic(Vec3d position, boolean onGround, Vec3d target, Vec3d realTarget) {
 		double xzMultiplier = 1;//.3;
-	    double dx = (position.x - target.x)*xzMultiplier;
+	    double dx = (target.x - position.x)*xzMultiplier;
 	    double dy = 0;
 	    if (target.y != Double.MIN_VALUE) {
-		    dy = (position.y - target.y);//* 4.8;//*16;
+		    dy = (target.y - position.y);//* 4.8;//*16;
 //			Debug.logMessage(dy+"");
 //		    if (!onGround || dy > 0 && dy < 1.4) dy = 0;
 //			dy *= 1.8;
 	    }
-	    double dz = (position.z - target.z)*xzMultiplier;
+	    double dz = (target.z - position.z)*xzMultiplier;
 
 		double realTargetDist = DistanceCalculator.getEuclideanDistance(position, realTarget);
 
