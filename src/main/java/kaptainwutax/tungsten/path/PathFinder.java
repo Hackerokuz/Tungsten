@@ -53,8 +53,8 @@ public class PathFinder {
 	public AtomicBoolean active = new AtomicBoolean(false);
 	public AtomicBoolean stop = new AtomicBoolean(false);
 	public Thread thread = null;
-	private Set<Vec3d> closed = Collections.synchronizedSet(new HashSet<>());
-	private AtomicDoubleArray bestHeuristicSoFar;
+	private final Set<Vec3d> closed = Collections.synchronizedSet(new HashSet<>());
+	private final AtomicDoubleArray bestHeuristicSoFar = new AtomicDoubleArray(COEFFICIENTS.length);
 	private BinaryHeapOpenSet openSet = new BinaryHeapOpenSet();
 	protected static final double[] COEFFICIENTS = {1.5, 2, 2.5, 3, 4, 5, 10};
 	protected static final AtomicReferenceArray<Node> bestSoFar = new AtomicReferenceArray<Node>(COEFFICIENTS.length);
@@ -68,7 +68,7 @@ public class PathFinder {
 	private Node start;
 
 	public Vec3d TARGET = new Vec3d(0.5D, 10.0D, 0.5D);
-	
+
 	synchronized public void find(WorldView world, Vec3d target, PlayerEntity player) {
 		find(world, target, player, Optional.empty());
 	}
@@ -135,21 +135,8 @@ public class PathFinder {
 			}
 		} while (!prev.agent.onGround && !prev.agent.touchingWater);
 
-		if (DistanceCalculator.getJumpHeight(prev.agent.getPos().y, n.agent.getPos().y) < -2.75 || prev.agent.isDamaged || n.agent.isDamaged) {
-//			RenderHelper.clearRenderers();
-//        	RenderHelper.renderNode(prev);
-//        	TungstenMod.RENDERERS.add(new Cuboid(prev.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.3D, 0.8D, 0.3D), prev.color));
-//        	RenderHelper.renderNode(n);
-//        	try {
-// 				Thread.sleep(150);
-// 			} catch (InterruptedException e) {
-// 				// TODO Auto-generated catch block
-// 				e.printStackTrace();
-// 			}
-			return true;
-		}
-		return false;
-	}
+        return DistanceCalculator.getJumpHeight(prev.agent.getPos().y, n.agent.getPos().y) < -2.75 || prev.agent.isDamaged || n.agent.isDamaged;
+    }
 
 	private void search(WorldView world, Vec3d target, PlayerEntity player) {
 		search(world, null, target, player);
@@ -188,7 +175,7 @@ public class PathFinder {
 	    	return;
 	    }
 	
-	    bestHeuristicSoFar = initializeBestHeuristics(this.start);
+	    initializeBestHeuristics(this.start);
 	    openSet = new BinaryHeapOpenSet();
 	    openSet.insert(this.start);
 	    closed.clear();
@@ -624,6 +611,7 @@ public class PathFinder {
         for (int i = 0; i < bestHeuristicSoFar.length(); i++) {
             bestHeuristicSoFar.set(i, start.combinedCost / COEFFICIENTS[i]);
             bestSoFar.set(i, start);
+			this.bestHeuristicSoFar.set(i, start.combinedCost / COEFFICIENTS[i]);
         }
         return bestHeuristicSoFar;
     }
@@ -759,7 +747,7 @@ public class PathFinder {
 		}
         TungstenModDataContainer.PATHFINDER.clearParentsForBestSoFar(newStart);
         TungstenModDataContainer.PATHFINDER.closed.clear();
-        TungstenModDataContainer.PATHFINDER.bestHeuristicSoFar = TungstenModDataContainer.PATHFINDER.initializeBestHeuristics(newStart);
+        TungstenModDataContainer.PATHFINDER.initializeBestHeuristics(newStart);
         TungstenModDataContainer.PATHFINDER.openSet = new BinaryHeapOpenSet();
         TungstenModDataContainer.PATHFINDER.openSet.insert(newStart);
         TungstenModDataContainer.PATHFINDER.start = newStart;
@@ -939,16 +927,15 @@ public class PathFinder {
                                 }
                             }
 
-					        // Update best heuristic safely
-					        synchronized (bestHeuristicSoFar) {
-					            if (!updateBestSoFar(child, target, bestHeuristicSoFar)) {
-					                failing.set(false);
-					            }
-					        }
-						}
-						return null;
-					});
-				}
+                            synchronized (bestHeuristicSoFar) {
+                                if (!updateBestSoFar(child, target, bestHeuristicSoFar)) {
+                                    failing.set(false);
+                                }
+                            }
+                        }
+                        return null;
+                    });
+                }
 				
 			} else {
 		
@@ -965,8 +952,7 @@ public class PathFinder {
 				                openSet.insert(child);
 				            }
 				        }
-	
-				        // Update best heuristic safely
+
 				        synchronized (bestHeuristicSoFar) {
 				            if (!updateBestSoFar(child, target, bestHeuristicSoFar)) {
 				                failing.set(false);
