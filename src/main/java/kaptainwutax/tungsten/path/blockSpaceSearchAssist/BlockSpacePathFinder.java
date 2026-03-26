@@ -171,15 +171,15 @@ public class BlockSpacePathFinder {
 	
 	private static double computeHeuristic(Vec3d position, Vec3d target, WorldView world) {
 		double xzMultiplier = 1/*.2*/;
-	    double dx = (position.x - target.x)*xzMultiplier;
+	    double dx = (target.x - position.x)*xzMultiplier;
 	    double dy = 0;
-	    double dz = (position.z - target.z)*xzMultiplier;
+	    double dz = (target.z - position.z)*xzMultiplier;
 	    if (BlockStateChecker.isAnyWater(world.getBlockState(new BlockPos((int) position.x, (int) position.y, (int) position.z)))) {
-	    	dy = (position.y - target.y)*1.8;
+	    	dy = (target.y - position.y)*1.8;
 	    } else if (DistanceCalculator.getHorizontalManhattanDistance(position, target) < 32) {
-	    	dy = (position.y - target.y)*1.5;
+	    	dy = (target.y - position.y)*1.5;
 	    } else {
-	    	dy = (position.y - target.y)*0.5;
+	    	dy = (target.y - position.y)*0.5;
 	    }
 	    return (Math.sqrt(dx * dx + dy * dy + dz * dz)) /** 3*/;
 	}
