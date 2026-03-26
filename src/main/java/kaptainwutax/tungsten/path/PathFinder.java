@@ -834,39 +834,37 @@ public class PathFinder {
 			
 			if (children.size() > 5) {
 				Node[][] chunks = ArrayChunkSplitter.splitArrayIntoChunksOfX(children.toArray(new Node[children.size()]), children.size()/5);
-				
-				for (int i = 0; i < chunks.length; i++) {
-					Node[] nodes = chunks[i];
-					tasks.add(() -> {
-						for (int j = 0; j < nodes.length; j++) {
-							Node child = nodes[j];
-							if (stop.get()) return null;
-					    	if (Thread.currentThread().isInterrupted()) return null;
-							
-							// Check if this child is too close to any already accepted child
-						    for (Node other : validChildren) {
-						    	if (Thread.currentThread().isInterrupted()) return null;
-						        double distance = other.agent.getPos().distanceTo(child.agent.getPos());
-				
-						        boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
-						        boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
-				
-						        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
-						            return null; // too close to existing child
-						        }
-						    }
-							
-							boolean skip = filterChildren(child, lastBlockNode, nextBlockNode, isSmallBlock, world);
-							
-							if (skip || checkForFallDamage(child, world)) {
-								return null;
-							}
-							
-							validChildren.add(child);
-						}
-						return null;
-					});
-				}
+
+                for (Node[] nodes : chunks) {
+                    tasks.add(() -> {
+                        for (Node child : nodes) {
+                            if (stop.get()) return null;
+                            if (Thread.currentThread().isInterrupted()) return null;
+
+                            // Check if this child is too close to any already accepted child
+                            for (Node other : validChildren) {
+                                if (Thread.currentThread().isInterrupted()) return null;
+                                double distance = other.agent.getPos().distanceTo(child.agent.getPos());
+
+                                boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
+                                boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
+
+                                if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
+                                    return null; // too close to existing child
+                                }
+                            }
+
+                            boolean skip = filterChildren(child, lastBlockNode, nextBlockNode, isSmallBlock, world);
+
+                            if (skip || checkForFallDamage(child, world)) {
+                                return null;
+                            }
+
+                            validChildren.add(child);
+                        }
+                        return null;
+                    });
+                }
 				
 			} else {
 				tasks = children.stream().map(child -> (Callable<Void>) () -> {
@@ -925,23 +923,21 @@ public class PathFinder {
 					
 			if (validChildren.size() > 25) {
 				Node[][] chunks = ArrayChunkSplitter.splitArrayIntoChunksOfX(validChildren.toArray(new Node[validChildren.size()]), children.size()/25);
-				
-				for (int i = 0; i < chunks.length; i++) {
-					Node[] nodes = chunks[i];
-					tasks.add(() -> {
-						for (int j = 0; j < nodes.length; j++) {
-							Node child = nodes[j];
-							if (stop.get()) return null;
-					    	if (Thread.currentThread().isInterrupted()) return null;
-					        updateNode(world, parent, child, target, TARGET, blockPath.get(), closed);
-		
-					        synchronized (openSetLock) {
-					            if (child.isOpen()) {
-					                openSet.update(child);
-					            } else {
-					                openSet.insert(child);
-					            }
-					        }
+
+                for (Node[] nodes : chunks) {
+                    tasks.add(() -> {
+                        for (Node child : nodes) {
+                            if (stop.get()) return null;
+                            if (Thread.currentThread().isInterrupted()) return null;
+                            updateNode(world, parent, child, target, TARGET, blockPath.get(), closed);
+
+                            synchronized (openSetLock) {
+                                if (child.isOpen()) {
+                                    openSet.update(child);
+                                } else {
+                                    openSet.insert(child);
+                                }
+                            }
 
 					        // Update best heuristic safely
 					        synchronized (bestHeuristicSoFar) {
