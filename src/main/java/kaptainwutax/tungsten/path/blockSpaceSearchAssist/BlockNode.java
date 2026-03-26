@@ -271,7 +271,7 @@ public class BlockNode {
 
 	public List<BlockNode> getChildren(WorldView world, Goal goal, boolean generateDeep) {
 
-		List<BlockNode> nodes = getNodesIn3DCircule(8, this, goal, generateDeep);
+		List<BlockNode> nodes = getNodesIn3DCircle(8, this, goal, generateDeep);
 //		nodes.removeIf((child) -> {
 //			return shouldRemoveNode(world, child);
 //		});
@@ -298,9 +298,9 @@ public class BlockNode {
 		boolean shouldSlow = false;
 		
 
-		boolean isStreightPossible = StreightMovementHelper.isPossible(world, start, end, shouldRender, shouldSlow);
+		boolean isStraightPossible = StreightMovementHelper.isPossible(world, start, end, shouldRender, shouldSlow);
 		
-		if (isStreightPossible) return true;
+		if (isStraightPossible) return true;
 		if (endNode == null) return false;
 		
 		// When running bot in normal environment instead of parkour you need to turn on Neo and Corner jump checks to avoid cases where it can get stuck
@@ -324,7 +324,7 @@ public class BlockNode {
 		return false;
 	}
 
-	private List<BlockNode> getNodesIn3DCircule(int d, BlockNode parent, Goal goal, boolean generateDeep) {
+	private List<BlockNode> getNodesIn3DCircle(int d, BlockNode parent, Goal goal, boolean generateDeep) {
 		ConcurrentLinkedQueue<BlockNode> nodes = new ConcurrentLinkedQueue<>();
 
 	    double g = 32.656;
