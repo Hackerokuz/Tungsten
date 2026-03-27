@@ -370,7 +370,7 @@ public class BlockNode {
 
                     BlockNode newNode = new BlockNode(this.x + px, this.y + py, this.z + pz, goal, this,
                             ActionCosts.WALK_ONE_BLOCK_COST, this.player);
-					newNode.isDoingJump = Math.sqrt(dx * dx + dz * dz) > 2;
+					newNode.isDoingJump = Math.abs(pz) > 1 || Math.abs(px) > 1;
                     nodes.add(newNode);
                 }
             }
