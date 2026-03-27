@@ -3,14 +3,9 @@ package kaptainwutax.tungsten.path.blockSpaceSearchAssist;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import kaptainwutax.tungsten.Debug;
-import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.TungstenModDataContainer;
 import kaptainwutax.tungsten.TungstenModRenderContainer;
 import kaptainwutax.tungsten.helpers.BlockShapeChecker;
@@ -21,19 +16,16 @@ import kaptainwutax.tungsten.helpers.blockPath.BlockPosShifter;
 import kaptainwutax.tungsten.helpers.movement.CornerJumpMovementHelper;
 import kaptainwutax.tungsten.helpers.movement.NeoMovementHelper;
 import kaptainwutax.tungsten.helpers.movement.StreightMovementHelper;
-import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.path.calculators.ActionCosts;
 import kaptainwutax.tungsten.render.Color;
 import kaptainwutax.tungsten.render.Cuboid;
 import kaptainwutax.tungsten.world.BetterBlockPos;
-import net.minecraft.block.AirBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.CarpetBlock;
 import net.minecraft.block.CropBlock;
 import net.minecraft.block.DaylightDetectorBlock;
-import net.minecraft.block.FenceBlock;
 import net.minecraft.block.LadderBlock;
 import net.minecraft.block.LanternBlock;
 import net.minecraft.block.LilyPadBlock;
@@ -351,7 +343,7 @@ public class BlockNode {
         IntStream.range(generateDeep ? -64 : -4, finalYMax).parallel().forEach(py -> {
             int localD;
 
-            if (py < 0 && py < -5) {
+            if (py < -5) {
                 double t = Math.sqrt((2 * py * -1) / g);
                 localD = (int) Math.ceil(v_sprint * t);
             } else {
@@ -496,10 +488,7 @@ public class BlockNode {
 		if ((currentBlock instanceof LadderBlock) && distance > 2.3) {
 			return true;
 		}
-		if ((childBelowBlock instanceof LadderBlock || childBlock instanceof LadderBlock) && distance > 6.3) {
-			return true;
-		}
-		if ((childBelowBlock instanceof LadderBlock && !(childState.isAir() || childBlock instanceof LadderBlock))) {
+        if ((childBelowBlock instanceof LadderBlock && !(childState.isAir() || childBlock instanceof LadderBlock))) {
 			return true;
 		}
 		if ((childBelowBlock instanceof LadderBlock || childBlock instanceof LadderBlock) && distance < 1 && heightDiff >= -1) {
@@ -507,12 +496,6 @@ public class BlockNode {
 		}
 		if ((childBelowBlock instanceof LadderBlock || childBlock instanceof LadderBlock)
 				&& wasCleared(world, getBlockPos(), child.getBlockPos(), this, child) && distance < 5.3 && heightDiff >= -1) {
-			return false;
-		}
-		if (childBlock instanceof LadderBlock) {
-			return false;
-		}
-		if (childBelowBlock instanceof LadderBlock) {
 			return false;
 		}
 
