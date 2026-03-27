@@ -331,7 +331,6 @@ public class BlockSpacePathFinder {
 				j++;
 	        }
 		}
-		return path;
 	}
 	
 	
