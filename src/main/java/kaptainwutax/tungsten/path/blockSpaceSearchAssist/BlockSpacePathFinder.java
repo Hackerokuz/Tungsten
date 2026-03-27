@@ -10,13 +10,7 @@ import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.movement.StreightMovementHelper;
 import kaptainwutax.tungsten.helpers.render.RenderHelper;
-import kaptainwutax.tungsten.path.calculators.ActionCosts;
-import kaptainwutax.tungsten.render.Color;
-import kaptainwutax.tungsten.render.Cuboid;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.LadderBlock;
-import net.minecraft.block.VineBlock;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -98,6 +92,7 @@ public class BlockSpacePathFinder {
                     break;
                 }
             }
+			numNodes++;
 			BlockNode next = openSet.removeLowest();
 			
 			if (closed.contains(next)) continue;
@@ -129,10 +124,21 @@ public class BlockSpacePathFinder {
                 } else {
                     openSet.insert(child);//dont double count, dont insert into open set if it's already there
                 }
+
+				for (int i = 0; i < COEFFICIENTS.length; i++) {
+					double heuristic = child.estimatedCostToGoal + child.cost / COEFFICIENTS[i];
+					if (bestHeuristicSoFar[i] - heuristic > minimumImprovement) {
+						bestHeuristicSoFar[i] = heuristic;
+						bestSoFar[i] = child;
+						if (failing && getDistFromStartSq(child, start.getPos()) > MIN_DIST_PATH * MIN_DIST_PATH) {
+							failing = false;
+						}
+					}
+				}
 			}
             
-            
-            failing = updateBestSoFar(next, bestHeuristicSoFar, target);
+
+
 		}
 
 		if (openSet.isEmpty()) {
@@ -197,35 +203,12 @@ public class BlockSpacePathFinder {
 	    child.estimatedCostToGoal = estimatedCostToGoal;
 	    child.combinedCost = child.cost + estimatedCostToGoal;
 	}
+
 	
-	private static boolean updateBestSoFar(BlockNode child, double[] bestHeuristicSoFar, Vec3d target) {
-		boolean failing = false;
-		if (child.previous == null) return false;
-	    for (int i = 0; i < COEFFICIENTS.length; i++) {
-	        double heuristic = child.combinedCost / COEFFICIENTS[i];
-	        if (bestHeuristicSoFar[i] - heuristic > minimumImprovement && bestHeuristicSoFar[i] != heuristic) {
-//		        Debug.logMessage((bestHeuristicSoFar[i] - heuristic) + "");
-//		        	RenderHelper.renderPathSoFar(child);
-//		        	try {
-//						Thread.sleep(6);
-//					} catch (InterruptedException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-	            bestSoFar[i] = child;
-	            bestHeuristicSoFar[i] = heuristic;
-	            if (failing && child.estimatedCostToGoal > MIN_DIST_PATH * MIN_DIST_PATH) {
-                    failing = false;
-                }
-	        }
-	    }
-	    return failing;
-	}
-	
-	private static double getDistFromStartSq(BlockNode n, Vec3d target) {
-        double xDiff = n.getPos().x - target.x;
-        double yDiff = n.getPos().y - target.y;
-        double zDiff = n.getPos().z - target.z;
+	private static double getDistFromStartSq(BlockNode n, Vec3d start) {
+        double xDiff = start.x - n.getPos().x;
+        double yDiff = start.x - n.getPos().y;
+        double zDiff = start.x - n.getPos().z;
         return xDiff * xDiff + yDiff * yDiff + zDiff * zDiff;
     }
 
