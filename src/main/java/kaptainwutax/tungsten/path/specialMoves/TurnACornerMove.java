@@ -30,7 +30,7 @@ public class TurnACornerMove {
 	    boolean jump = false;
         int limit = 0;
         desiredYaw -= reverse ? -90f : 90f;
-        while (limit < 8 && !newNode.agent.horizontalCollision) {
+        while (limit < 4 && !newNode.agent.horizontalCollision) {
         	limit++;
         	RenderHelper.renderNode(newNode);
         	try {
@@ -45,7 +45,7 @@ public class TurnACornerMove {
         }
         limit = 0;
 		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
-        while (limit < 8 && !newNode.agent.horizontalCollision) {
+        while (limit < 4 && !newNode.agent.horizontalCollision) {
         	limit++;
         	RenderHelper.renderNode(newNode);
         	try {

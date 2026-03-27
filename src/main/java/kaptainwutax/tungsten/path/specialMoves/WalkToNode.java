@@ -31,6 +31,7 @@ public class WalkToNode {
 	    boolean jump = false;
         int limit = 0;
         while (limit < 200) {
+			if (agent.isInLava()) newNode.cost = 2e6;
         	limit++;
 //        	RenderHelper.renderNode(newNode);
 //        	try {

@@ -17,7 +17,9 @@ import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DirectionHelper;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.MathHelper;
+import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
+import kaptainwutax.tungsten.path.calculators.BinaryHeapOpenSet;
 import kaptainwutax.tungsten.path.specialMoves.ClimbALadderMove;
 import kaptainwutax.tungsten.path.specialMoves.CornerJump;
 import kaptainwutax.tungsten.path.specialMoves.DivingMove;
@@ -107,9 +109,12 @@ public class Node {
 	    return (int) result;
     }
 
-
 	public List<Node> getChildren(WorldView world, Vec3d target, BlockNode nextBlockNode) {
-		if (shouldSkipNodeGeneration(nextBlockNode)) {
+		return getChildren(world, target, nextBlockNode, false);
+	}
+
+	public List<Node> getChildren(WorldView world, Vec3d target, BlockNode nextBlockNode, boolean forceGenAllNodes) {
+		if (!forceGenAllNodes && shouldSkipNodeGeneration(nextBlockNode)) {
 	        return Collections.emptyList();
 	    }
 
@@ -129,12 +134,12 @@ public class Node {
 	    	Node climbALadderMove = ClimbALadderMove.generateMove(this, nextBlockNode);
 	    	boolean isClimbALadderMoveClose = Math.abs(climbALadderMove.agent.getPos().y - nextBlockNode.getPos(true).y) < 0.4;
 	    	nodes.add(climbALadderMove);
-	    	if (isClimbALadderMoveClose) {
+	    	if (!forceGenAllNodes && isClimbALadderMoveClose) {
 	    		return nodes;
 	    	}
 	    }
 
-	    
+
 	    if (agent.onGround && this.agent.canSprint()) {
 	    	if (nextBlockNode.isDoingNeo()) {
 	    		nodes.add(NeoJump.generateMove(this, nextBlockNode));
@@ -153,13 +158,13 @@ public class Node {
         if (agent.touchingWater) {
             if (BlockShapeChecker.getShapeVolume(nextBlockNode.getBlockPos().up(), world) == 0) nodes.add(SwimmingMove.generateMove(this, nextBlockNode));
             else  nodes.add(DivingMove.generateMove(this, nextBlockNode));
-            return nodes;
+			if (!forceGenAllNodes) return nodes;
         }
 
             if (this.agent.canSprint()) {
                 Node sprintJumpMove = SprintJumpMove.generateMove(this, nextBlockNode);
                 boolean isSprintJumpMoveClose = sprintJumpMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) < 0.85;
-                if (!isSprintJumpMoveClose) {
+//                if (!isSprintJumpMoveClose || forceGenAllNodes) {
                     if (agent.onGround || agent.touchingWater || agent.isClimbing(world)) {
                         generateGroundOrWaterNodes(world, target, nextBlockNode, nodes);
                     } else {
@@ -167,7 +172,7 @@ public class Node {
                     }
 
                     sortNodesByYaw(nodes, target);
-                }
+//                }
                 nodes.add(sprintJumpMove);
 //	    	if (isSprintJumpMoveClose) return nodes;
             } else {
@@ -194,11 +199,11 @@ public class Node {
 	    	nodes.add(exitWaterMove);
 //	    	if (isExitWaterMoveClose) return nodes;
 	    }
-	    
+
 	    if (!agent.touchingWater && !this.agent.canSprint()) {
 	    	nodes.add(WalkToNode.generateMove(this, nextBlockNode));
 	    }
-	    
+
 	    if (!agent.touchingWater && this.agent.canSprint() && nextBlockNode.getPos(true).distanceTo(agent.getPos()) < 4) {
 	    	nodes.add(RunToNode.generateMove(this, nextBlockNode));
 	    }
@@ -206,6 +211,8 @@ public class Node {
 	    	nodes.add(LongJump.generateMove(this, nextBlockNode));    		
 //    		nodes.add(CornerJump.generateMove(this, nextBlockNode));
     	}
+
+
     	
 	    return nodes;
 	}
@@ -255,6 +262,8 @@ public class Node {
 	                    for (float yaw = fromYaw; yaw < toYaw; yaw += 22.5f) {
 	                        for (boolean sprint : new boolean[]{true, false}) {
 	                        	if (!this.agent.canSprint() && sprint) continue;
+								if (!right && !left && !forward) continue;
+								if (right && left) continue;
 	                            if (( ((right || left) && !forward)) && sprint) continue;
 
 	                            for (boolean jump : new boolean[]{true, false}) {
@@ -322,11 +331,13 @@ public class Node {
 
 	private double calculateNodeCost(boolean forward, boolean sprint, boolean jump, boolean sneak, boolean isCloseToBlockNode,
 	                                 boolean isDoingLongJump, Agent agent) {
-	    double addNodeCost = 1;
+	    double addNodeCost = 4.358; // Magic number makse pathfinder go FAST. DO NOT TOUCH
 
-	    if (forward && sprint && jump && !sneak) {
-	        addNodeCost -= 0.2;
-	    }
+//	    if (forward && sprint && jump && !sneak) {
+//	        addNodeCost -= 0.2;
+//	    }
+
+		if (agent.isInLava()) addNodeCost += 2e6;
 
 	    if (sneak) {
 	        addNodeCost += 2000;
@@ -337,7 +348,7 @@ public class Node {
 //        }
 
 
-        return addNodeCost + Math.abs(agent.yaw- this.agent.yaw) * 5;
+        return addNodeCost; //+ Math.abs(agent.yaw- this.agent.yaw) * 5;
 	}
 
 	private void generateAirborneNodes(WorldView world, BlockNode nextBlockNode, List<Node> nodes) {

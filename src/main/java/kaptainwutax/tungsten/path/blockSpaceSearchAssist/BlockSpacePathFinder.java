@@ -184,7 +184,7 @@ public class BlockSpacePathFinder {
 	    } else if (DistanceCalculator.getHorizontalManhattanDistance(position, target) < 32) {
 	    	dy = (target.y - position.y)*1.5;
 	    } else {
-	    	dy = (target.y - position.y)*0.5;
+	    	dy = (target.y - position.y)*0.5+80 - position.y;
 	    }
 	    return (Math.sqrt(dx * dx + dy * dy + dz * dz)) /** 3*/;
 	}
@@ -192,13 +192,13 @@ public class BlockSpacePathFinder {
 	private static void updateNode(BlockNode current, BlockNode child, Vec3d target, WorldView world) {
 	    Vec3d childPos = child.getPos();
 	    Block childBlock = child.getBlockState(world).getBlock();
-//	    double tentativeCost = (childBlock instanceof LadderBlock || childBlock instanceof VineBlock ? 12.2 : 0) + ActionCosts.WALK_ONE_BLOCK_COST; // Assuming uniform cost for each step
+	    double tentativeCost = child.cost + 1; // Assuming uniform cost for each step
 //	    tentativeCost += BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(child.getBlockPos())) ? 50 : 0; // Assuming uniform cost for each step
 
 	    double estimatedCostToGoal = computeHeuristic(childPos, target, world) + DistanceCalculator.getHorizontalEuclideanDistance(current.getPos(true), child.getPos(true)) /* * 8 + (current.getBlockPos().getY() != child.getBlockPos().getY() ? 2.8 : 0)*/;
 
 	    child.previous = current;
-//	    child.cost = tentativeCost;
+	    child.cost = tentativeCost;
 	    child.estimatedCostToGoal = estimatedCostToGoal;
 	    child.combinedCost = child.cost + estimatedCostToGoal;
 	}

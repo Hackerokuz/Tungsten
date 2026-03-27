@@ -31,6 +31,7 @@ public class RunToNode {
 	    boolean jump = false;
         int limit = 0;
         while (limit < 200) {
+			if (newNode.agent.isInLava()) newNode.cost += 2e6;
         	limit++;
 //        	RenderHelper.renderNode(newNode);
 //        	try {

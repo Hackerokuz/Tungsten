@@ -31,7 +31,9 @@ public class SprintJumpMove {
 //		TungstenMod.RENDERERS.clear();
 		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(newNode.agent.getPos(), nextBlockNode.getPos(true));
 		if (distance < 0.8) return newNode;
+		float pitch = (float) (0.6 - Math.random());
 		while (distance > 0.95 && limit < 500 && !newNode.agent.horizontalCollision && !newNode.agent.isInLava() || (distance <= 0.3 && !newNode.agent.onGround) && limit < 500) {
+			if (agent.isInLava()) newNode.cost = 2e6;
 //        	RenderHelper.renderNode(newNode);
 //        	try {
 //				Thread.sleep(50);
@@ -47,14 +49,14 @@ public class SprintJumpMove {
 					&& !BlockStateChecker.isAnyWater(world.getBlockState(newNode.agent.getLandingPos(world))))
 					&& DistanceCalculator.getJumpHeight(lastHigheastNodeSinceGround.agent.getPos().y, newNode.agent.getPos().y) < -2.7
 					|| !TungstenModDataContainer.ignoreFallDamage && newNode.agent.isDamaged) {
-				newNode = new Node(newNode, world, new PathInput(true, false, false, false, true, false, true, parent.agent.pitch, desiredYaw),
-	            		new Color(24, 17, 222), newNode.cost + cost * 200);
+				newNode = new Node(newNode, world, new PathInput(true, false, false, false, true, false, true, pitch, desiredYaw),
+	            		new Color(24, 17, 222), newNode.cost + cost * 2e5);
 				break;
 			}
 			
         	limit++;
     		distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
-            newNode = new Node(newNode, world, new PathInput(true, false, false, false, newNode.agent.onGround, false, true, parent.agent.pitch, desiredYaw),
+            newNode = new Node(newNode, world, new PathInput(true, false, false, false, newNode.agent.onGround, false, true, pitch, desiredYaw),
             		new Color(147, 17, 222), newNode.cost + cost);
             if (newNode.agent.isClimbing(world)) newNode.cost += 12.8;
             float forwardSpeedScore = 0.98f - Math.abs(newNode.agent.forwardSpeed);

@@ -6,6 +6,7 @@ import static kaptainwutax.tungsten.path.blockSpaceSearchAssist.Ternary.YES;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.TungstenModDataContainer;
 import kaptainwutax.tungsten.TungstenModRenderContainer;
+import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.Ternary;
 import kaptainwutax.tungsten.render.Color;
@@ -859,8 +860,7 @@ public class MovementHelper {
 		    boolean isAboveBlockConnected = BlockStateChecker.isConnected(pos.up(), world);
 		    
 		    boolean isAboveX2Leaves =  world.getBlockState(pos.up(2)).getBlock() instanceof LeavesBlock;
-	    	
-	    	if (isJumpingUp && !world.getBlockState(pos.up(2)).isAir()) return true;
+	    	if (isJumpingUp && !world.getBlockState(pos.up(2)).isAir() || isJumpingUp && isAboveLeaves) return true;
 
 		    if (isJumpingUp && isJumpingOneBlock && BlockStateChecker.isBottomSlab(stateBelow) && state.isAir() && aboveState.isAir()) return false;
 		    

@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenModDataContainer;
 import kaptainwutax.tungsten.TungstenModRenderContainer;
 import kaptainwutax.tungsten.helpers.BlockShapeChecker;
@@ -16,6 +17,7 @@ import kaptainwutax.tungsten.helpers.blockPath.BlockPosShifter;
 import kaptainwutax.tungsten.helpers.movement.CornerJumpMovementHelper;
 import kaptainwutax.tungsten.helpers.movement.NeoMovementHelper;
 import kaptainwutax.tungsten.helpers.movement.StreightMovementHelper;
+import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.path.calculators.ActionCosts;
 import kaptainwutax.tungsten.render.Color;
 import kaptainwutax.tungsten.render.Cuboid;
@@ -139,7 +141,7 @@ public class BlockNode {
 		this.wasOnSlime = player.getEntityWorld().getBlockState(new BlockPos(x, y - 1, z))
 				.getBlock() instanceof SlimeBlock;
 		this.wasOnLadder = player.getEntityWorld().getBlockState(new BlockPos(x, y, z)).getBlock() instanceof LadderBlock;
-		this.cost = parent != null ? 0 : ActionCosts.COST_INF;
+		this.cost = parent != null ? cost : ActionCosts.COST_INF;
 		this.estimatedCostToGoal = goal.heuristic(x, y, z);
 		if (Double.isNaN(estimatedCostToGoal)) {
 			throw new IllegalStateException(goal + " calculated implausible heuristic");
@@ -306,12 +308,13 @@ public class BlockNode {
 				return true;
 			}
 		}
-		boolean isCornerJumpPossible = CornerJumpMovementHelper.isPossible(world, start, end, shouldRender, shouldSlow);
-		if (isCornerJumpPossible) {
-			endNode.isDoingNeo = false;
-			endNode.isDoingCornerJump = true;
-			return true;
-		}
+		// FIXME: This causes a bug where bot thinks it can jump up when there is a block above it
+//		boolean isCornerJumpPossible = CornerJumpMovementHelper.isPossible(world, start, end, shouldRender, shouldSlow);
+//		if (isCornerJumpPossible) {
+//			endNode.isDoingNeo = false;
+//			endNode.isDoingCornerJump = true;
+//			return true;
+//		}
 
 		return false;
 	}
@@ -351,9 +354,10 @@ public class BlockNode {
             }
 
             // Center node
-            nodes.add(new BlockNode(this.x, this.y + py, this.z, goal, this, ActionCosts.WALK_ONE_BLOCK_COST, this.player));
+			BlockNode nA = new BlockNode(this.x, this.y + py, this.z, goal, this, ActionCosts.WALK_ONE_BLOCK_COST, this.player);
+            nodes.add(nA);
 
-            for (int id = 1; id <= localD; id++) {
+            for (int id = 0; id <= localD; id++) {
                 int px = id, pz = 0;
                 int dx = -1, dz = 1;
                 int n = id * 4;
@@ -368,9 +372,11 @@ public class BlockNode {
                     px += dx;
                     pz += dz;
 
-                    BlockNode newNode = new BlockNode(this.x + px, this.y + py, this.z + pz, goal, this,
-                            ActionCosts.WALK_ONE_BLOCK_COST, this.player);
-					newNode.isDoingJump = Math.abs(pz) > 1 || Math.abs(px) > 1;
+
+					boolean isDoingJump = Math.abs(pz) > 1 || Math.abs(px) > 1;
+					BlockNode newNode = new BlockNode(this.x + px, this.y + py, this.z + pz, goal, this,
+							isDoingJump ? ActionCosts.WALK_ONE_BLOCK_COST + 0.5 : ActionCosts.WALK_ONE_BLOCK_COST, this.player);
+					newNode.isDoingJump = isDoingJump;
                     nodes.add(newNode);
                 }
             }
@@ -538,6 +544,8 @@ public class BlockNode {
 		}
 
 		if (BlockStateChecker.isBottomSlab(childState) && isAboveChildSolid2)
+			child.cost += 20;
+		if (BlockStateChecker.isAnyWater(childState))
 			child.cost += 20;
 		
 		return false;

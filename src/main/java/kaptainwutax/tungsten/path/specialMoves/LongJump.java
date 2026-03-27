@@ -32,6 +32,7 @@ public class LongJump {
 	    // Go back if we are too close to the edge to jump
 	    if (distance > 4 && DistanceCalculator.getDistanceToEdge(newNode.agent) < 0.8 && AgentChecker.isAgentStationary(newNode.agent, 0.07)) {
 	        for (int j = 0; j < 6; j++) {
+				if (agent.isInLava()) cost += 2e6;
 	        	if (newNode.agent.horizontalCollision) break;
 	            Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.45, 0, -0.45);
 	        	Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenModDataContainer.world, adjustedBox));
@@ -49,6 +50,7 @@ public class LongJump {
 			distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
 	        // Go forward to edge and jump
 	        while (limit < 10) {
+				if (agent.isInLava()) cost += 2e6;
 	        	if (newNode.agent.horizontalCollision) break;
 	            Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(boxExpension, 0, boxExpension);
 	        	limit++;
@@ -67,6 +69,7 @@ public class LongJump {
 	        limit = 0;
     		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
 	        while (limit < 22 && !newNode.agent.onGround && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-1) {
+				if (agent.isInLava()) cost += 2e6;
 	        	if (newNode.agent.horizontalCollision) break;
 	            newNode = new Node(newNode, world, new PathInput(true, false, false, false, false, false, false, agent.pitch, desiredYaw),
 	            		new Color(distance < 0.4 ? 180 : 0, 255, 150), newNode.cost + cost);
@@ -78,6 +81,7 @@ public class LongJump {
 			limit = 0;
 	        // Run forward to the node
 			while (distance > 0.2 && limit < 22) {
+				if (agent.isInLava()) cost += 2e6;
 	        	if (newNode.agent.horizontalCollision) break;
 	        	limit++;
 	    		distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
