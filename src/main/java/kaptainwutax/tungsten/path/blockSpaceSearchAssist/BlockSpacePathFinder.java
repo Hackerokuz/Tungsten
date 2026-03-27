@@ -67,7 +67,7 @@ public class BlockSpacePathFinder {
         long primaryTimeoutTime = startTime + (generateDeep ? 4800L : 480L);
 		
         TungstenModRenderContainer.RENDERERS.clear();
-		Debug.logMessage("Searchin...");
+		Debug.logMessage("Searching...");
 		start = new BlockNode(start.getBlockPos(), goal, player, world);
 		
 		double[] bestHeuristicSoFar = new double[COEFFICIENTS.length];//keep track of the best node by the metric of (estimatedCostToGoal + cost / COEFFICIENTS[i])
@@ -102,7 +102,7 @@ public class BlockSpacePathFinder {
 				TungstenModRenderContainer.RENDERERS.clear();
 				List<BlockNode> path = generatePath(next, world);
 
-				Debug.logMessage("Found rought path!");
+				Debug.logMessage("Found right path!");
 				
 				return Optional.of(path);
 			}
@@ -148,8 +148,7 @@ public class BlockSpacePathFinder {
 			Debug.logWarning("Ran out of nodes");
 			return Optional.empty();
 		}
-        Optional<List<BlockNode>> result = bestSoFar(true, numNodes, start, world);
-		return result;
+        return bestSoFar(true, numNodes, start, world);
 	}
 	
 	protected static Optional<List<BlockNode>> bestSoFar(boolean logInfo, int numNodes, BlockNode startNode, WorldView world) {
@@ -297,7 +296,7 @@ public class BlockSpacePathFinder {
 //        }
 //        stringPull(path2);
 //        Collections.reverse(path2);
-        stringPull(path);
+		stringPull(path);
         Collections.reverse(path);
 		
 		
@@ -305,7 +304,7 @@ public class BlockSpacePathFinder {
 	}
 	
 	
-	public static List<BlockNode> stringPull(List<BlockNode> path) {
+	public static void stringPull(List<BlockNode> path) {
 		int i = 0, j = 2;
 		while (j < path.size()) {
 			BlockNode pi = path.get(i);
