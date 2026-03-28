@@ -11,7 +11,9 @@ import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.path.Node;
 import kaptainwutax.tungsten.path.PathInput;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
+import kaptainwutax.tungsten.path.blockSpaceSearchAssist.Ternary;
 import kaptainwutax.tungsten.render.Color;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.WorldView;
 
 public class SprintJumpMove {
@@ -34,6 +36,10 @@ public class SprintJumpMove {
 		float pitch = (float) (0.6 - Math.random());
 		while (distance > 0.95 && limit < 500 && !newNode.agent.horizontalCollision && !newNode.agent.isInLava() || (distance <= 0.3 && !newNode.agent.onGround) && limit < 500) {
 			if (agent.isInLava()) newNode.cost = 2e6;
+			if (newNode.agent.touchingWater) {
+				newNode.cost += 0.2;
+				break;
+			}
 //        	RenderHelper.renderNode(newNode);
 //        	try {
 //				Thread.sleep(50);
@@ -66,6 +72,10 @@ public class SprintJumpMove {
 //	    			(sidewaysSpeedScore > 1e-8 || sidewaysSpeedScore < -1e-8 ? 5 : 0 ) 
 	    			 (forwardSpeedScore > 1e-8 || forwardSpeedScore < -1e-8 ? 15 : 0 )
 	    			 + (forwardSpeedScore );
+
+			if (newNode.agent.horizontalCollision) {
+				newNode.cost += 0.00004;
+			}
         	if (closestDistance > distance) {
         		closestDistance = distance;
         	} else {
