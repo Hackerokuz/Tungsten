@@ -140,7 +140,7 @@ public class Node {
 	    }
 
 
-	    if (agent.onGround && this.agent.canSprint()) {
+	    if (!agent.touchingWater && agent.onGround && this.agent.canSprint()) {
 	    	if (nextBlockNode.isDoingNeo()) {
 	    		nodes.add(NeoJump.generateMove(this, nextBlockNode));
 	    	}
@@ -156,7 +156,7 @@ public class Node {
 	    }
 
         if (agent.touchingWater) {
-            if (BlockShapeChecker.getShapeVolume(nextBlockNode.getBlockPos().up(), world) == 0) nodes.add(SwimmingMove.generateMove(this, nextBlockNode));
+			if (!BlockStateChecker.isAnyWater(world.getBlockState(nextBlockNode.getBlockPos().up()))) nodes.add(SwimmingMove.generateMove(this, nextBlockNode));
             else  nodes.add(DivingMove.generateMove(this, nextBlockNode));
 			if (!forceGenAllNodes) return nodes;
         }
