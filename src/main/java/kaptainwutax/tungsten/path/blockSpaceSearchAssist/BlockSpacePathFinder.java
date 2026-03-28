@@ -193,9 +193,17 @@ public class BlockSpacePathFinder {
 	    Vec3d childPos = child.getPos();
 	    Block childBlock = child.getBlockState(world).getBlock();
 	    double tentativeCost = child.cost + 1; // Assuming uniform cost for each step
+
+		if (BlockStateChecker.isAnyWater(child.getBlockState(world))) {
+			tentativeCost += 1.8;
+		}
+		if (BlockStateChecker.isAnyWater(world.getBlockState(child.getBlockPos().up()))) {
+			tentativeCost += 5.8;
+		}
+
 //	    tentativeCost += BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(child.getBlockPos())) ? 50 : 0; // Assuming uniform cost for each step
 
-	    double estimatedCostToGoal = computeHeuristic(childPos, target, world) + DistanceCalculator.getHorizontalEuclideanDistance(current.getPos(true), child.getPos(true)) /* * 8 + (current.getBlockPos().getY() != child.getBlockPos().getY() ? 2.8 : 0)*/;
+	    double estimatedCostToGoal = computeHeuristic(childPos, target, world);
 
 	    child.previous = current;
 	    child.cost = tentativeCost;
