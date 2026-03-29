@@ -55,6 +55,12 @@ public class SwimmingMove {
 			} else {
 				newNode = new Node(newNode, world, new PathInput(true, false, false, true, newNode.agent.getPos().y > newNode.agent.getEyeY() + 0.1 , false, true, -30f, desiredYaw + 45f),
 						new Color(0, 255, 150), newNode.cost + cost);
+				if (newNode.agent.velY > 0.045) {
+					newNode = new Node(newNode, world, new PathInput(true, false, false, true, false, true, true, -30f, desiredYaw + 45f),
+							new Color(0, 255, 150), newNode.cost + cost);
+					newNode = new Node(newNode, world, new PathInput(true, false, false, true, false, true, true, -30f, desiredYaw + 45f),
+							new Color(0, 255, 150), newNode.cost + cost);
+                }
 			}
 			distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
 
