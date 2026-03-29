@@ -85,17 +85,17 @@ public class Node {
 	 public int hashCode(int round, boolean shouldAddYaw) {
 		 long result = 3241;
 		 if (this.input != null) {
-		 	result = 2L * Boolean.hashCode(this.input.forward);
-		    result = result + 3L * Boolean.hashCode(this.input.back);
-		    result = result + 5L * Boolean.hashCode(this.input.right);
-		    result = result + 11L * Boolean.hashCode(this.input.left);
-		    result = result + 13L * Boolean.hashCode(this.input.jump);
-		    result = result + 17L * Boolean.hashCode(this.input.sneak);
-		    result = result + 19L * Boolean.hashCode(this.input.sprint);
+			 if (this.input.forward) result += "forward".hashCode();
+			 if (this.input.back) result += "back".hashCode();
+			 if (this.input.right) result += "right".hashCode();
+			 if (this.input.left) result += "left".hashCode();
+			 if (this.input.jump) result += "jump".hashCode();
+			 if (this.input.sneak) result += "sneak".hashCode();
+			 if (this.input.sprint) result += "sprint".hashCode();
 //		    result = result + (Math.round(this.input.pitch));
 		    if (shouldAddYaw) result = result + (Math.round(this.input.yaw / 45f));
-		    result = result + (Math.round(this.agent.velX*10));
-		    result = result + (Math.round(this.agent.velZ*10));
+//		    result = result + (Math.round(this.agent.velX*10));
+//		    result = result + (Math.round(this.agent.velZ*10));
 		 }
 //	    if (round > 1) {
 //		    result = 34L * result + Double.hashCode(roundToPrecision(this.agent.getPos().x, round));
@@ -117,6 +117,8 @@ public class Node {
 		if (!forceGenAllNodes && shouldSkipNodeGeneration(nextBlockNode)) {
 	        return Collections.emptyList();
 	    }
+
+		double distance = DistanceCalculator.getEuclideanDistance(this.agent.getPos(), nextBlockNode.getPos(true));
 
 	    List<Node> nodes = new ArrayList<>();
 
@@ -171,7 +173,7 @@ public class Node {
                         generateAirborneNodes(world, nextBlockNode, nodes);
                     }
 
-                    sortNodesByYaw(nodes, target);
+//                    sortNodesByYaw(nodes, target);
 //                }
                 nodes.add(sprintJumpMove);
 //	    	if (isSprintJumpMoveClose) return nodes;
@@ -182,7 +184,7 @@ public class Node {
                     generateAirborneNodes(world, nextBlockNode, nodes);
                 }
 
-                sortNodesByYaw(nodes, target);
+//                sortNodesByYaw(nodes, target);
             }
 	    
 	    if (agent.onGround) {
@@ -193,18 +195,18 @@ public class Node {
 	    		nodes.add(CornerJump.generateMove(this, nextBlockNode, true));
 	    	}
 	    }
-	    if (agent.touchingWater && BlockShapeChecker.getShapeVolume(nextBlockNode.getBlockPos(), world) == 0) {
+	    if (agent.touchingWater && BlockShapeChecker.getShapeVolume(nextBlockNode.getBlockPos(), world) == 0 && !BlockStateChecker.isAnyWater(nextBlockNode.getBlockState(world))) {
 	    	Node exitWaterMove = ExitWaterMove.generateMove(this, nextBlockNode);
 //	    	boolean isExitWaterMoveClose = exitWaterMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) < 1.5;
 	    	nodes.add(exitWaterMove);
 //	    	if (isExitWaterMoveClose) return nodes;
 	    }
 
-	    if (!agent.touchingWater && !this.agent.canSprint()) {
+	    if (!agent.touchingWater && !this.agent.canSprint() && distance > 12) {
 	    	nodes.add(WalkToNode.generateMove(this, nextBlockNode));
 	    }
 
-	    if (!agent.touchingWater && this.agent.canSprint() && nextBlockNode.getPos(true).distanceTo(agent.getPos()) < 4) {
+	    if (!agent.touchingWater && this.agent.canSprint() && distance < 14) {
 	    	nodes.add(RunToNode.generateMove(this, nextBlockNode));
 	    }
     	if (agent.onGround && !agent.isClimbing(world) && world.getBlockState(agent.getBlockPos().down()).getBlock() instanceof LadderBlock) {	
@@ -287,7 +289,7 @@ public class Node {
             if (jump && sneak) return;
 	        Node newNode = new Node(this, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw),
 	                new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost);
-	        double addNodeCost = calculateNodeCost(forward, sprint, jump, sneak, isCloseToBlockNode, isDoingLongJump, newNode.agent);
+	        double addNodeCost = calculateNodeCost(forward, sprint, jump, sneak, newNode.agent);
 	        if (newNode.agent.getPos().isWithinRangeOf(nextBlockNode.getPos(true), 0.1, 0.4)) return;
 //	        double newNodeDistanceToBlockNode = Math.ceil(newNode.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
 //	        double parentNodeDistanceToBlockNode = Math.ceil(newNode.parent.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
@@ -315,7 +317,7 @@ public class Node {
 		                Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(world, adjustedBox));
 			            if (blockCollisions.findAny().isEmpty() && isDoingLongJump) jump = true;
 		                newNode = new Node(newNode, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw),
-		                        jump ? new Color(150, 55, 85) : new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost + addNodeCost);
+		                        jump ? new Color(150, 55, 85) : new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost + addNodeCost + 2.4);
 		                if (!isDoingLongJump && jump && j > 1) break;
                         if (!newNode.agent.onGround && !newNode.agent.isClimbing(world)) break;
 		            }
@@ -329,13 +331,21 @@ public class Node {
 	    }
 	}
 
-	private double calculateNodeCost(boolean forward, boolean sprint, boolean jump, boolean sneak, boolean isCloseToBlockNode,
-	                                 boolean isDoingLongJump, Agent agent) {
+	private double calculateNodeCost(boolean forward, boolean sprint, boolean jump, boolean sneak, Agent agent) {
 	    double addNodeCost = 4.358; // Magic number makse pathfinder go FAST. DO NOT TOUCH
 
 //	    if (forward && sprint && jump && !sneak) {
 //	        addNodeCost -= 0.2;
 //	    }
+		if (agent.touchingWater) {
+			addNodeCost += 0.2;
+		}
+		if (agent.forwardSpeed > 1e-8 || agent.forwardSpeed < -1e-8) {
+			addNodeCost += 15;
+		}
+		if (agent.horizontalCollision) {
+			addNodeCost += 0.0004;
+		}
 
 		if (agent.isInLava()) addNodeCost += 2e6;
 
@@ -385,11 +395,13 @@ public class Node {
 	    		&& (TungstenModDataContainer.ignoreFallDamage || DistanceCalculator.getJumpHeight(agent.posY, newNode.agent.posY) > -3)) {
 	    	if (i > 60) break;
 	    	i++;
+			double addNodeCost = calculateNodeCost(forward, true, false, false, newNode.agent);
 	        newNode = new Node(newNode, world, new PathInput(forward, false, right, false, false, false, true, agent.pitch, yaw),
-	                new Color(0, 255, 255), this.cost + (this.agent.canSprint() ? 1 : 8));
+	                new Color(0, 255, 255), this.cost + addNodeCost + (this.agent.canSprint() ? 1 : 8));
 	    }
+		double addNodeCost = calculateNodeCost(forward, true, false, false, newNode.agent);
         newNode = new Node(newNode, world, new PathInput(forward, false, right, false, false, false, true, agent.pitch, yaw),
-                new Color(0, 255, 255), this.cost + (this.agent.canSprint() ? 1 : 8));
+                new Color(0, 255, 255), this.cost + addNodeCost + (this.agent.canSprint() ? 1 : 8));
 
         if (newNode.agent.getPos().distanceTo(this.agent.getPos()) < 1.05) return;
 	    nodes.add(newNode);
