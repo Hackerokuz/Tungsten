@@ -35,7 +35,7 @@ public class SwimmingMove {
 		float desiredPitch = (float) DirectionHelper.calcPitchFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
 		double distance = DistanceCalculator.getHorizontalEuclideanDistance(agent.getPos(), nextBlockNode.getPos(true));
 	    Node newNode = new Node(parent, world, new PathInput(true, false, false, true, false, false, true, -30f, desiredYaw + 45),
-	    				new Color(0, 255, 150), parent.cost + 0.0001);
+	    				new Color(0, 255, 150), parent.cost + (parent.agent.swimming ? 0 : 0.05) +  0.0001);
 		int limit = 0;
 		double closestDistance = Double.MAX_VALUE;
 //		int eyeBlockPos = (int) newNode.agent.getPos().subtract(0.05D, -0.4f - 0.05D, 0.05D).getY();
@@ -51,15 +51,15 @@ public class SwimmingMove {
 		while (i < 28 && distance > 0.2 && !newNode.agent.horizontalCollision) {
 			if (newNode.agent.isSubmergedInWater) {
 				newNode = new Node(newNode, world, new PathInput(true, false, false, true, i % 20 == 0, false, true, -30f, desiredYaw + 45f),
-						new Color(0, 255, 150), newNode.cost + cost);
+						new Color(0, 255, 150), newNode.cost + (newNode.agent.swimming ? 0 : 0.05) + cost);
 			} else {
 				newNode = new Node(newNode, world, new PathInput(true, false, false, true, newNode.agent.getPos().y > newNode.agent.getEyeY() + 0.1 , false, true, -30f, desiredYaw + 45f),
-						new Color(0, 255, 150), newNode.cost + cost);
+						new Color(0, 255, 150), newNode.cost + (newNode.agent.swimming ? 0 : 0.05) + cost);
 				if (newNode.agent.velY > 0.045) {
 					newNode = new Node(newNode, world, new PathInput(true, false, false, true, false, true, true, -30f, desiredYaw + 45f),
-							new Color(0, 255, 150), newNode.cost + cost);
+							new Color(0, 255, 150), newNode.cost + (newNode.agent.swimming ? 0 : 0.05) + cost);
 					newNode = new Node(newNode, world, new PathInput(true, false, false, true, false, true, true, -30f, desiredYaw + 45f),
-							new Color(0, 255, 150), newNode.cost + cost);
+							new Color(0, 255, 150), newNode.cost + (newNode.agent.swimming ? 0 : 0.05) + cost);
                 }
 			}
 			distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
