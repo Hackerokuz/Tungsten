@@ -97,7 +97,7 @@ public class PathFinder {
                 }
                 Thread.sleep(500);
                 NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
-                blockPath.ifPresent(blockNodes -> NEXT_CLOSEST_BLOCKNODE_IDX.set(findClosestPositionIDX(world, player.getBlockPos(), blockNodes)));
+                blockPath.ifPresent(blockNodes -> NEXT_CLOSEST_BLOCKNODE_IDX.set(findClosestPositionIDX(world, player.getBlockPos(), blockNodes)+1));
                 search(world, target, player);
             } catch(Exception e) {
                 e.printStackTrace();
@@ -180,7 +180,7 @@ public class PathFinder {
 	    	Debug.logWarning("Failed! No block path");
 	    	return;
 	    } else {
-			NEXT_CLOSEST_BLOCKNODE_IDX.set(findClosestPositionIDX(world, start.agent.getBlockPos(), blockPath.get()));
+			NEXT_CLOSEST_BLOCKNODE_IDX.set(findClosestPositionIDX(world, start.agent.getBlockPos(), blockPath.get())+1);
 		}
 	
 	    initializeBestHeuristics(this.start);
@@ -309,6 +309,7 @@ public class PathFinder {
 	        numNodesConsidered.set(numNodesConsidered.get()+1);
 	        if (updateNextClosestBlockNodeIDX(blockPath.get(), next, closed, world)) {
 	        	primaryTimeoutTime = System.currentTimeMillis() + 1120L;
+				failedAttempts = 0;
 	        }
 //        	if (numNodesConsidered % 5 == 0 && updateNextClosestBlockNodeIDX(blockPath.get(), next, closed)) {
 //        		List<Node> path = constructPath(next);
@@ -346,11 +347,11 @@ public class PathFinder {
 	        Debug.logMessage("stopped!");
 	        stop.set(false);
 	    } else if (openSet.isEmpty()) {
-			if (failedAttempts < 2) {
+			if (failedAttempts < 2 && TungstenModDataContainer.EXECUTOR.path != null) {
 				RenderHelper.clearRenderers();
 				closed.clear();
 				PathFinder.blockPath = Optional.empty();
-				Node lastNode = TungstenModDataContainer.EXECUTOR.path == null ? start : TungstenModDataContainer.EXECUTOR.path.getLast();
+				Node lastNode = TungstenModDataContainer.EXECUTOR.path.getLast();
 
 				search(world, lastNode, target, player, failedAttempts+1);
 				return;
@@ -457,9 +458,9 @@ public class PathFinder {
 	        yScale = 1e2;
 	        zScale = 1e3;
 	    } else {
-	        xScale = 1;
+	        xScale = 100;
 	        yScale = 100;
-	        zScale = 1;
+	        zScale = 100;
 	    }
 
 	    // Compute scaled position with hashCode offset
@@ -748,7 +749,8 @@ public class PathFinder {
 		  if (result.isEmpty() // || result.get().size() < 46
 //				  || !(result.get().getLast().agent.onGround && result.get().getLast().agent.touchingWater)
 				  || result.get().getLast().agent.isClimbing(TungstenModDataContainer.world)
-				  || result.get().getLast().agent.getPos().distanceTo(result.get().getFirst().agent.getPos()) < 3.5) {
+				  || result.get().getLast().agent.getPos().distanceTo(result.get().getFirst().agent.getPos()) < 1.5
+		  ) {
 			  return false;
 		  }
 //        if (player.getPos().distanceTo(result.get().getFirst().agent.getPos()) < 1 && next.agent.getPos().distanceTo(target) > 1) {
