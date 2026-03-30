@@ -5,22 +5,7 @@ import static kaptainwutax.tungsten.path.blockSpaceSearchAssist.Ternary.YES;
 
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.Ternary;
-import net.minecraft.block.AirBlock;
-import net.minecraft.block.AzaleaBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.DoorBlock;
-import net.minecraft.block.EndPortalBlock;
-import net.minecraft.block.FenceBlock;
-import net.minecraft.block.FenceGateBlock;
-import net.minecraft.block.FireBlock;
-import net.minecraft.block.PaneBlock;
-import net.minecraft.block.ShulkerBoxBlock;
-import net.minecraft.block.SkullBlock;
-import net.minecraft.block.SlabBlock;
-import net.minecraft.block.TrapdoorBlock;
-import net.minecraft.block.WallBlock;
+import net.minecraft.block.*;
 import net.minecraft.block.enums.BlockHalf;
 import net.minecraft.block.enums.SlabType;
 import net.minecraft.block.enums.WallShape;
@@ -53,7 +38,9 @@ public class BlockStateChecker {
                 || block instanceof TrapdoorBlock
                 || block instanceof EndPortalBlock
                 || block instanceof SkullBlock
-                || block instanceof ShulkerBoxBlock) {
+                || block instanceof ShulkerBoxBlock
+				|| block instanceof LeavesBlock
+				|| block instanceof MangroveRootsBlock) {
             return NO;
         }
         return YES;
