@@ -371,7 +371,7 @@ public class PathFinder {
             if (bestSoFar.get(i) == null || bestSoFar.get(i).parent == null) {
                 continue;
             }
-            double dist = DistanceCalculator.getEuclideanDistance(startNode.agent.getPos(), realTarget);
+            double dist = DistanceCalculator.getEuclideanDistance(startNode.agent.getPos(), bestSoFar.get(i).agent.getPos());
             if (dist > bestDist) {
                 bestDist = dist;
             }
@@ -386,7 +386,7 @@ public class PathFinder {
 //                }
 
                 Node n = bestSoFar.get(i);
-                if (!n.agent.onGround && !n.agent.touchingWater && !n.agent.isClimbing(TungstenModDataContainer.world)) continue;
+//                if (!n.agent.onGround && !n.agent.touchingWater && !n.agent.isClimbing(TungstenModDataContainer.world)) continue;
                 List<Node> path = new ArrayList<>();
 				while(n.parent != null) {
 					if (TungstenModDataContainer.PATHFINDER.stop.get()) break;
@@ -601,7 +601,7 @@ public class PathFinder {
 		boolean failing = true;
 	    for (int i = 0; i < COEFFICIENTS.length; i++) {
 	        double heuristic = child.combinedCost / COEFFICIENTS[i];
-	        if (bestHeuristicSoFar.get(i) - heuristic > minimumImprovement && bestHeuristicSoFar.get(i) != heuristic) {
+	        if (bestHeuristicSoFar.get(i) - heuristic > minimumImprovement) {
 	            bestHeuristicSoFar.set(i, heuristic);
 	            bestSoFar.set(i, child);
 	            if (failing && getDistFromStartSq(child, start) > MIN_DIST_PATH * MIN_DIST_PATH) {
@@ -745,7 +745,7 @@ public class PathFinder {
         if (now < primaryTimeoutTime) return false;
         Optional<List<Node>> result = PathFinder.bestSoFar(true, 0, start, TungstenModDataContainer.PATHFINDER.TARGET);
 
-		  if (result.isEmpty() || result.get().size() < 46
+		  if (result.isEmpty() // || result.get().size() < 46
 //				  || !(result.get().getLast().agent.onGround && result.get().getLast().agent.touchingWater)
 				  || result.get().getLast().agent.isClimbing(TungstenModDataContainer.world)
 				  || result.get().getLast().agent.getPos().distanceTo(result.get().getFirst().agent.getPos()) < 3.5) {
@@ -825,13 +825,7 @@ public class PathFinder {
     	if (isSmallBlock) return child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY()-1);
 
 
-		if (shouldSkipNode(child, TARGET, world)) {
-//	        	Debug.logMessage("Skipped");
-			return true;
-		}
-
-    	return false;
-//    	return false;
+        return shouldSkipNode(child, TARGET, world);
     }
 
     private boolean processNodeChildren(WorldView world, Node parent, Vec3d target, Vec3d start, Optional<List<BlockNode>> blockPath,
