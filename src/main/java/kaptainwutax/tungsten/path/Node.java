@@ -332,7 +332,7 @@ public class Node {
 	}
 
 	private double calculateNodeCost(boolean forward, boolean sprint, boolean jump, boolean sneak, Agent agent) {
-	    double addNodeCost = 4.358; // Magic number makse pathfinder go FAST. DO NOT TOUCH
+	    double addNodeCost = 4.358; // Magic number makes pathfinder go FAST. DO NOT TOUCH
 
 //	    if (forward && sprint && jump && !sneak) {
 //	        addNodeCost -= 0.2;
