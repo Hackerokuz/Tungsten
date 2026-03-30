@@ -375,7 +375,7 @@ public class BlockNode {
 
 					boolean isDoingJump = Math.abs(pz) > 1 || Math.abs(px) > 1;
 					BlockNode newNode = new BlockNode(this.x + px, this.y + py, this.z + pz, goal, this,
-							isDoingJump ? ActionCosts.WALK_ONE_BLOCK_COST + 0.5 : ActionCosts.WALK_ONE_BLOCK_COST, this.player);
+							isDoingJump ? ActionCosts.WALK_ONE_BLOCK_COST + 6.5 : ActionCosts.WALK_ONE_BLOCK_COST, this.player);
 					newNode.isDoingJump = isDoingJump;
                     nodes.add(newNode);
                 }
