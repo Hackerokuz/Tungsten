@@ -12,8 +12,7 @@ public class EnterWaterAndSwimMove {
 			if (parent.agent.canSprint()) {
 		    	Node sprintJumpMove = SprintJumpMove.generateMove(parent, nextBlockNode);
 		    	if (sprintJumpMove.agent.touchingWater) {
-		    		Node swimmingMove = SwimmingMove.generateMove(sprintJumpMove, nextBlockNode);
-		    		return swimmingMove;
+                    return SwimmingMove.generateMove(sprintJumpMove, nextBlockNode);
 		    	}
 			} else {
 		    	Node walkMove = WalkToNode.generateMove(parent, nextBlockNode);
