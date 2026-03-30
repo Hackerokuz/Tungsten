@@ -340,7 +340,8 @@ public class Node {
 		if (agent.touchingWater) {
 			addNodeCost += 0.2;
 		}
-		if (agent.forwardSpeed > 1e-8 || agent.forwardSpeed < -1e-8) {
+
+		if (Math.abs(agent.velX) < 0.01 && Math.abs(agent.velY) < 0.01 && Math.abs(agent.velZ) < 0.01) {
 			addNodeCost += 15;
 		}
 		if (agent.horizontalCollision) {
