@@ -10,6 +10,7 @@ import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.movement.StreightMovementHelper;
 import kaptainwutax.tungsten.helpers.render.RenderHelper;
+import kaptainwutax.tungsten.render.Color;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
@@ -183,15 +184,12 @@ public class BlockSpacePathFinder {
 	    	dy = (target.y - position.y)*1.8;
 	    } else if (DistanceCalculator.getHorizontalManhattanDistance(position, target) < 32) {
 	    	dy = (target.y - position.y)*1.5;
-	    } else {
-	    	dy = (target.y - position.y)*0.5+80 - position.y;
 	    }
 	    return (Math.sqrt(dx * dx + dy * dy + dz * dz)) /** 3*/;
 	}
 	
 	private static void updateNode(BlockNode current, BlockNode child, Vec3d target, WorldView world) {
 	    Vec3d childPos = child.getPos();
-	    Block childBlock = child.getBlockState(world).getBlock();
 	    double tentativeCost = child.cost + 1; // Assuming uniform cost for each step
 
 		if (BlockStateChecker.isAnyWater(child.getBlockState(world))) {
@@ -304,8 +302,8 @@ public class BlockSpacePathFinder {
 //        }
 //        stringPull(path2);
 //        Collections.reverse(path2);
+		Collections.reverse(path);
 		stringPull(path);
-        Collections.reverse(path);
 		
 		
 		return path;
@@ -321,7 +319,7 @@ public class BlockSpacePathFinder {
 
 	        boolean canGetFromLastNToCurrent = StreightMovementHelper.isPossible(TungstenModDataContainer.world, pi.getBlockPos(), pj.getBlockPos());
 	        double heightDiff = p.previous == null ? 0 : DistanceCalculator.getJumpHeight(p.previous.getPos(true).getY(), p.getPos(true).getY());
-			double dist =  DistanceCalculator.getEuclideanDistance(p.getPos(true), pj.getPos(true));
+//			double dist =  DistanceCalculator.getEuclideanDistance(p.getPos(true), pj.getPos(true));
 //			RenderHelper.clearRenderers();
 //			RenderHelper.renderNode(p, Color.RED);
 //			RenderHelper.renderNode(pi, Color.BLUE);
@@ -332,7 +330,8 @@ public class BlockSpacePathFinder {
 //			} catch (InterruptedException e) {
 //				e.printStackTrace();
 //			}
-	        if (canGetFromLastNToCurrent && heightDiff == 0 && !p.isDoingJump()) {
+
+	        if (canGetFromLastNToCurrent && !p.isDoingJump() && !p.previous.isDoingJump() && heightDiff == 0) {
 	        	path.remove(j-1);
 	        } else {
 	        	i = j-1;
