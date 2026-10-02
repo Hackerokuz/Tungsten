@@ -9,20 +9,23 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.Tungsten;
+import kaptainwutax.tungsten.client.TungstenClient;
 import net.minecraft.commands.CommandSource;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 
 public abstract class Command {
 
-	protected static final CommandRegistryAccess REGISTRY_ACCESS = CommandManager.createRegistryAccess(BuiltinRegistries.createWrapperLookup());
+	protected static final CommandRegistryAccess REGISTRY_ACCESS = CommandManager.createRegistryAccess(BuiltInRegistries.createWrapperLookup());
     protected static final int SINGLE_SUCCESS = com.mojang.brigadier.Command.SINGLE_SUCCESS;
-    protected final static SimpleCommandExceptionType INCORRECT_USE = new SimpleCommandExceptionType(Text.literal("Incorrect command use!"));
+    protected final static SimpleCommandExceptionType INCORRECT_USE = new SimpleCommandExceptionType(Component.literal("Incorrect command use!"));
     
     private final String _name;
     private final String _description;
-    protected TungstenMod _mod;
+    protected TungstenClient _mod;
     private Runnable _onFinish = null;
 
-    public Command(String name, String description, Tungsten mod) {
+    public Command(String name, String description, TungstenClient mod) {
         _name = name;
         _description = description;
         _mod = mod;

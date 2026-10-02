@@ -1,6 +1,6 @@
 package kaptainwutax.tungsten.client.render;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;import kaptainwutax.tungsten.TungstenModDataContainer;
+import com.mojang.blaze3d.vertex.BufferBuilder;import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import net.minecraft.core.BlockPos;import net.minecraft.gizmos.Gizmos;
 import net.minecraft.world.phys.Vec3;
 
@@ -25,7 +25,7 @@ public class Line extends Renderer {
     }
 
     @Override
-    public void render(BufferBuilder builder) {
+    public void render() {
         if(TungstenModDataContainer.gameRenderer == null || this.start == null || this.end == null || this.color == null)return;
 //        Vec3d camPos = TungstenModDataContainer.gameRenderer.getCamera().getCameraPos();
 //        this.putVertex(builder, camPos, this.start);

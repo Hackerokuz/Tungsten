@@ -4,17 +4,19 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
-import kaptainwutax.tungsten.TungstenModDataContainer;
+import kaptainwutax.tungsten.client.TungstenClient;
+import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.commands.arguments.GotoTargetArgumentType;
 import kaptainwutax.tungsten.client.commandsystem.Command;
 import kaptainwutax.tungsten.client.commandsystem.CommandException;
-import kaptainwutax.tungsten.path.targets.BlockTarget;
+import kaptainwutax.tungsten.client.path.targets.BlockTarget;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.command.CommandSource;
+import net.minecraft.commands.CommandSource;
 
 public class GotoCommand extends Command {
 	
-	public GotoCommand(TungstenMod mod) throws CommandException {
+	public GotoCommand(TungstenClient mod) throws CommandException {
         // x z
         // x y z
         // x y z dimension
@@ -26,15 +28,15 @@ public class GotoCommand extends Command {
     }
 
 	@Override
-	public void build(LiteralArgumentBuilder<CommandSource> builder) {
+	public void build(LiteralArgumentBuilder<net.minecraft.commands.CommandSource> builder) {
 		
 		builder.then(argument("gotoTarget", GotoTargetArgumentType.create()).executes(context -> {
 	        try {
 				
 	        	BlockTarget target = GotoTargetArgumentType.get(context);
 	        	if(!TungstenModDataContainer.PATHFINDER.active.get() && !TungstenModDataContainer.EXECUTOR.isRunning()) {
-	        		TungstenMod.TARGET = target.getVec3d().add(0.5, 0, 0.5);
-	        		TungstenModDataContainer.PATHFINDER.find(TungstenMod.mc.world, target.getVec3d().add(0.5, 0, 0.5), TungstenMod.mc.player);
+	        		TungstenClient.TARGET = target.getVec3d().add(0.5, 0, 0.5);
+	        		TungstenModDataContainer.PATHFINDER.find(TungstenClient.mc.level, target.getVec3d().add(0.5, 0, 0.5), TungstenClient.mc.player);
 	    		} else {
 	    			Debug.logWarning("Already running!");
 	    		}

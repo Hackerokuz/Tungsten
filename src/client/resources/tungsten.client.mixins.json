@@ -1,7 +1,7 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "kaptainwutax.tungsten.mixin.client",
+  "package": "kaptainwutax.tungsten.client.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
     "MixinMinecraftClient",
@@ -12,9 +12,7 @@
     "MixinWorldChunk",
     "MixinMinecraftClient",
     "MixinClientCommandSource",
-    "AccessorChatInputSuggestor",
-    "MixinChatInputSuggestor",
-    "MixinSuggestionWindow"
+    "GameRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

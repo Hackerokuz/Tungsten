@@ -1,0 +1,364 @@
+package kaptainwutax.tungsten.client.path.blockSpaceSearchAssist;
+
+import java.util.*;
+
+import kaptainwutax.tungsten.Debug;
+import kaptainwutax.tungsten.client.TungstenModDataContainer;
+import kaptainwutax.tungsten.client.TungstenModRenderContainer;
+import kaptainwutax.tungsten.client.helpers.BlockShapeChecker;
+import kaptainwutax.tungsten.client.helpers.BlockStateChecker;
+import kaptainwutax.tungsten.client.helpers.DistanceCalculator;
+import kaptainwutax.tungsten.client.helpers.movement.StreightMovementHelper;
+import kaptainwutax.tungsten.client.helpers.render.RenderHelper;
+import kaptainwutax.tungsten.client.path.calculators.ActionCosts;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+
+public class BlockSpacePathFinder {
+	
+	public static boolean active = false;
+	public static Thread thread = null;
+	protected static final double[] COEFFICIENTS = {1.5, 2, 2.5, 3, 4, 5, 10};
+	protected static final BlockNode[] bestSoFar = new BlockNode[COEFFICIENTS.length];
+	private static final double minimumImprovement = 4e6;
+	protected static final double MIN_DIST_PATH = 5;
+	
+	
+	public static void find(Level world, Vec3 target, LocalPlayer player) {
+		if(active)return;
+		active = true;
+
+		thread = new Thread(() -> {
+			try {
+				search(world, target, player);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+
+			active = false;
+		});
+		thread.setName("BlockSpacePathFinder");
+		thread.start();
+	}
+	
+	public static Optional<List<BlockNode>> search(Level world, Vec3 target, LocalPlayer player) {
+		return search(world, target, false, player);
+	}
+
+	public static Optional<List<BlockNode>> search(Level world, BlockNode start, Vec3 target, LocalPlayer player) {
+		return search(world, start, target, false, player);
+	}
+	
+	private static Optional<List<BlockNode>> search(Level world, Vec3 target, boolean generateDeep, LocalPlayer player) {
+		if (!world.getBlockState(player.blockPosition()).isAir() && BlockShapeChecker.getShapeVolume(player.blockPosition(), world) != 0 && BlockShapeChecker.getBlockHeight(player.blockPosition(), world) > 0.5) {
+			return search(world, new BlockNode(player.blockPosition().above(), new Goal((int) target.x, (int) target.y, (int) target.z), player, world), target, player);
+		}
+		return search(world, new BlockNode(player.blockPosition(), new Goal((int) target.x, (int) target.y, (int) target.z), player, world), target, player);
+	}
+	
+	private static Optional<List<BlockNode>> search(Level world, BlockNode start, Vec3 target, boolean generateDeep, LocalPlayer player) {
+		Goal goal = new Goal((int) target.x, (int) target.y, (int) target.z);
+		boolean failing = true;
+        int numNodes = 0;
+        int timeCheckInterval = 1 << 6;
+        long startTime = System.currentTimeMillis();
+        long primaryTimeoutTime = startTime + (generateDeep ? 4800L : 480L);
+		
+        TungstenModRenderContainer.RENDERERS.clear();
+		Debug.logMessage("Searching...");
+		start = new BlockNode(start.getBlockPos(), goal, player, world);
+		
+		double[] bestHeuristicSoFar = new double[COEFFICIENTS.length];//keep track of the best node by the metric of (estimatedCostToGoal + cost / COEFFICIENTS[i])
+		for (int i = 0; i < COEFFICIENTS.length; i++) {
+            bestHeuristicSoFar[i] = computeHeuristic(start.getPos(), target, world);
+            bestSoFar[i] = start;
+        }
+
+		BinaryHeapOpenSet openSet = new BinaryHeapOpenSet();
+		Set<BlockNode> closed = new HashSet<>();
+		openSet.insert(start);
+		target = target.subtract(0.5, 0, 0.5);
+		while(!openSet.isEmpty()) {
+			if (TungstenModDataContainer.PATHFINDER.stop.get()) {
+				RenderHelper.clearRenderers();
+				break;
+			}
+			TungstenModRenderContainer.RENDERERS.clear();
+			if ((numNodes & (timeCheckInterval - 1)) == 0) { // only call this once every 64 nodes (about half a millisecond)
+                long now = System.currentTimeMillis(); // since nanoTime is slow on windows (takes many microseconds)
+                if ((!failing && now - primaryTimeoutTime >= 0)) {
+                    break;
+                }
+            }
+			numNodes++;
+			BlockNode next = openSet.removeLowest();
+			
+			if (closed.contains(next)) continue;
+			
+			closed.add(next);
+			if(isPathComplete(next, target, failing)) {
+				TungstenModRenderContainer.RENDERERS.clear();
+				List<BlockNode> path = generatePath(next, world);
+
+				Debug.logMessage("Found right path!");
+				
+				return Optional.of(path);
+			}
+			new Thread(() -> {
+				if(TungstenModRenderContainer.RENDERERS.size() > 3000) {
+					TungstenModRenderContainer.RENDERERS.clear();
+				}
+				RenderHelper.renderPathSoFar(next);
+			}).start();
+//			try {
+//				Thread.sleep(200);
+//			} catch (InterruptedException e) {
+//			}
+			
+			for(BlockNode child : next.getChildren(world, goal, generateDeep)) {
+				if (TungstenModDataContainer.PATHFINDER.stop.get()) return Optional.empty();
+//				if (closed.contains(child)) continue;
+
+				updateNode(next, child, target, world);
+				
+                if (child.isOpen()) {
+                    openSet.update(child);
+                } else {
+                    openSet.insert(child);//dont double count, dont insert into open set if it's already there
+                }
+
+				for (int i = 0; i < COEFFICIENTS.length; i++) {
+					double heuristic = child.estimatedCostToGoal + child.cost / COEFFICIENTS[i];
+					if (bestHeuristicSoFar[i] - heuristic > minimumImprovement) {
+						bestHeuristicSoFar[i] = heuristic;
+						bestSoFar[i] = child;
+						if (failing && getDistFromStartSq(child, start.getPos()) > MIN_DIST_PATH * MIN_DIST_PATH) {
+							failing = false;
+						}
+					}
+				}
+			}
+            
+
+
+		}
+
+		if (openSet.isEmpty()) {
+			if (!generateDeep) {
+				return search(world, start, target, true, player);
+			}
+			Debug.logWarning("Ran out of nodes");
+			return Optional.empty();
+		}
+        return bestSoFar(true, numNodes, start, world);
+	}
+	
+	protected static Optional<List<BlockNode>> bestSoFar(boolean logInfo, int numNodes, BlockNode startNode, Level world) {
+        if (startNode == null) {
+            return Optional.empty();
+        }
+        double bestDist = 0;
+        for (int i = 0; i < COEFFICIENTS.length; i++) {
+            if (bestSoFar[i] == null) {
+                continue;
+            }
+            double dist = getDistFromStartSq(bestSoFar[i], startNode.getPos());
+            if (dist > bestDist) {
+                bestDist = dist;
+                continue;
+            }
+            if (dist > MIN_DIST_PATH * MIN_DIST_PATH) { // square the comparison since distFromStartSq is squared
+                BlockNode n = bestSoFar[i];
+				List<BlockNode> path = generatePath(n, world);
+				if (path.size() > 1) return Optional.of(path);
+            }
+        }
+        return Optional.empty();
+    }
+	
+	private static double computeHeuristic(Vec3 position, Vec3 target, Level world) {
+	    double dx = (target.x - position.x);
+	    double dy = (target.y - position.y);
+	    double dz = (target.z - position.z);
+//	    if (DistanceCalculator.getHorizontalManhattanDistance(position, target) < 32) {
+//	    	dy = (target.y - position.y)*1.5;
+//	    }
+	    return (Math.sqrt(dx * dx + dy * dy + dz * dz)) /** 3*/;
+	}
+	
+	private static void updateNode(BlockNode current, BlockNode child, Vec3 target, Level world) {
+	    Vec3 childPos = child.getPos();
+	    double tentativeCost = child.cost; // Assuming uniform cost for each step
+		tentativeCost += ActionCosts.WALK_ONE_BLOCK_COST;
+
+		if (BlockStateChecker.isAnyWater(child.getBlockState(world))) {
+			tentativeCost += ActionCosts.WALK_ONE_IN_WATER_COST;
+		}
+		if (BlockStateChecker.isAnyWater(world.getBlockState(child.getBlockPos().above()))) {
+			tentativeCost += ActionCosts.WALK_ONE_IN_WATER_COST;
+		}
+		if (child.isDoingJump()) {
+			tentativeCost += ActionCosts.JUMP_ONE_BLOCK_COST + 0.5;
+		}
+		if (child.isDoingNeo()) {
+			tentativeCost += 2.8;
+		}
+		if (child.getBlockPos().getY() > current.getBlockPos().getY()) {
+			tentativeCost += Math.max(ActionCosts.JUMP_ONE_BLOCK_COST, ActionCosts.WALK_ONE_BLOCK_COST) + 2;
+		}
+
+//	    tentativeCost += BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(child.getBlockPos())) ? 50 : 0; // Assuming uniform cost for each step
+
+	    double estimatedCostToGoal = computeHeuristic(childPos, target, world) * 5;
+
+	    child.previous = current;
+	    child.cost = tentativeCost;
+	    child.estimatedCostToGoal = estimatedCostToGoal;
+	    child.combinedCost = tentativeCost + estimatedCostToGoal;
+	}
+
+	
+	private static double getDistFromStartSq(BlockNode n, Vec3 start) {
+        double xDiff = start.x - n.getPos().x;
+        double yDiff = start.x - n.getPos().y;
+        double zDiff = start.x - n.getPos().z;
+        return xDiff * xDiff + yDiff * yDiff + zDiff * zDiff;
+    }
+
+	private static boolean isPathComplete(BlockNode node, Vec3 target, boolean failing) {
+        return node.getPos().distanceToSqr(target) < 1.0D;
+    }
+	
+	private static List<BlockNode> generatePath(BlockNode node, Level world) {
+		BlockNode n = node;
+		List<BlockNode> path = new ArrayList<>();
+
+		path.add(n);
+		while(n.previous != null) {
+//		        BlockState state = world.getBlockState(n.getBlockPos());
+//		        boolean isWater = BlockStateChecker.isAnyWater(state);
+		        BlockNode lastN = path.getLast();
+//		        boolean canGetFromLastNToCurrent = StreightMovementHelper.isPossible(world, lastN.getBlockPos(), n.getBlockPos());
+		        double heightDiff = DistanceCalculator.getJumpHeight(lastN.getPos(true).y(), n.getPos(true).y());
+//				if (!canGetFromLastNToCurrent) {
+						path.add(n);
+//						if (n.previous != null) path.add(n.previous);
+//				}
+//				if (heightDiff <= 0 && lastN.getPos(true).distanceTo(n.getPos(true)) <= 1.44) path = stringPull(path);
+
+			n = n.previous;
+		}
+		path.add(n);
+//		while(n.previous != null) {
+//		        BlockState state = world.getBlockState(n.getBlockPos());
+//		        boolean isWater = BlockStateChecker.isAnyWater(state);
+//		        BlockNode lastN = path.getLast();
+//		        boolean canGetFromLastNToCurrent = StreightMovementHelper.isPossible(world, lastN.getBlockPos(), n.getBlockPos());
+//		        double heightDiff = DistanceCalculator.getJumpHeight(lastN.getPos(true).getY(), n.getPos(true).getY());
+//				if (heightDiff != 0) {
+//					if (isWater && n.previous.previous != null)
+//					{
+//						path.add(n);
+//						path.add(n.previous);
+//						path.add(n.previous.previous);
+//					} else if (!isWater) {
+//						path.add(n);
+////						path.add(n.previous);
+//					}
+//				} else if (isWater && !canGetFromLastNToCurrent) {
+//					path.add(n);
+//				} else if (
+//						!isWater &&
+//						(DistanceCalculator.getHorizontalEuclideanDistance(n.previous.getBlockPos(), n.getBlockPos()) > 1.44 ||
+//						!canGetFromLastNToCurrent)
+//						) {
+//						path.add(n);
+//						if (n.previous != null) path.add(n.previous);
+//				}
+//			n = n.previous;
+//		}
+
+//		path.add(n);
+		
+//		List<BlockNode> path2 = new ArrayList<>();
+
+//    	path2.add(path.get(0));
+//		for (int i = 1; i < path.size(); i++) {
+//			BlockNode blockNode = path.get(i);
+//			BlockNode lastBlockNode = path.get(i-1);
+//	        boolean canGetFromLastNToCurrent = StreightMovementHelper.isPossible(world, lastBlockNode.getBlockPos(), blockNode.getBlockPos());
+//	        double distanceFromLastToCurrentNode = lastBlockNode.getPos(true).distanceTo(blockNode.getPos(true));
+//	        if (!canGetFromLastNToCurrent || BlockStateChecker.isAnyWater(world.getBlockState(lastBlockNode.getBlockPos()))) {
+//	        	if (!path2.contains(lastBlockNode)) path2.add(lastBlockNode);
+//	        	path2.add(blockNode);
+//	        } else if (distanceFromLastToCurrentNode > 1.44 || canGetFromLastNToCurrent || lastBlockNode.getBlockPos().getY() - blockNode.getBlockPos().getY() != 0) {
+//	        	path2.add(blockNode);
+//	        }
+//		}
+//    	path2.add(path.getFirst());
+//        for (BlockNode blockNode : path) {
+//            if (blockNode.previous != null) {
+//                path2.add(blockNode);
+//                double heightDiff = DistanceCalculator.getJumpHeight(blockNode.previous.getPos(true).getY(), blockNode.getPos(true).getY());
+//                if (heightDiff < 0 && !path2.contains(blockNode.previous)) {
+//                    path2.add(blockNode.previous);
+//                }
+//            } else {
+//
+//                path2.add(blockNode);
+//            }
+//        }
+//        stringPull(path2);
+//        Collections.reverse(path2);
+		Collections.reverse(path);
+		stringPull(path);
+		
+		
+		return path;
+	}
+
+
+	public static void stringPull(List<BlockNode> path) {
+		int i = 0, j = 2;
+		while (j < path.size()) {
+			BlockNode pi = path.get(i);
+			BlockNode pj = path.get(j);
+			BlockNode p = path.get(j-1);
+
+//			Agent newAgent = Agent.of(TungstenModDataContainer.player);
+//
+//			newAgent.setPos(pi.getPos(true).x, pi.getPos(true).y, pi.getPos(true).z);
+//
+//			newAgent.tick(TungstenModDataContainer.world);
+//
+//			Node startNode = new Node(null, newAgent, Color.WHITE, 0);
+//
+//
+//			Node sprintJumpMove = SprintJumpMove.generateMove(startNode, pj);
+//			boolean canGetFromLastNToCurrent = DistanceCalculator.getHorizontalEuclideanDistance(sprintJumpMove.agent.getPos(), pj.getPos(true)) < 1;;
+	        boolean canGetFromLastNToCurrent = StreightMovementHelper.isPossible(TungstenModDataContainer.world, pi.getBlockPos(), pj.getBlockPos());
+	        double heightDiff = p.previous == null ? 0 : DistanceCalculator.getJumpHeight(p.previous.getPos(true).y(), p.getPos(true).y());
+//			double dist =  DistanceCalculator.getEuclideanDistance(p.getPos(true), pj.getPos(true));
+//			RenderHelper.clearRenderers();
+//			RenderHelper.renderNode(p, Color.RED);
+//			RenderHelper.renderNode(pi, Color.BLUE);
+//			RenderHelper.renderNode(pj.previous, Color.GREEN);
+//			RenderHelper.renderNode(pj, Color.WHITE);
+//			try {
+//				Thread.sleep(400);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+
+	        if (canGetFromLastNToCurrent && !p.isDoingNeo() && !p.isDoingJump() && !p.previous.isDoingJump() && heightDiff == 0) {
+	        	path.remove(j-1);
+	        } else {
+	        	i = j-1;
+				j++;
+	        }
+		}
+	}
+	
+	
+}

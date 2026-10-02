@@ -4,7 +4,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
-import kaptainwutax.tungsten.TungstenModDataContainer;
+import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.commandsystem.Command;
 import net.minecraft.command.CommandSource;
 

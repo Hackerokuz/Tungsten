@@ -45,12 +45,12 @@ public class Cuboid extends Renderer {
     }
 
     @Override
-    public void render(BufferBuilder builder) {
+    public void render() {
         if(this.start == null || this.size == null || this.edges == null)return;
 
         for(Line edge: this.edges) {
             if(edge == null)continue;
-            edge.render(builder);
+            edge.render();
         }
     }
 

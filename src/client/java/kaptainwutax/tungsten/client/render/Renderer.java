@@ -6,7 +6,7 @@ import net.minecraft.world.phys.Vec3;
 
 public abstract class Renderer {
 
-    public abstract void render(BufferBuilder builder);
+    public abstract void render();
 
     public abstract BlockPos getPos();
 

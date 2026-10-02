@@ -2,9 +2,8 @@ package kaptainwutax.tungsten.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import kaptainwutax.tungsten.Tungsten;
-import kaptainwutax.tungsten.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.commandsystem.CommandExecutor;
-import kaptainwutax.tungsten.path.PathExecutor;
+import kaptainwutax.tungsten.client.path.PathExecutor;
 import kaptainwutax.tungsten.world.VoxelWorld;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;

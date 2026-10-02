@@ -1,6 +1,6 @@
 package kaptainwutax.tungsten.client.commandsystem;
 
-import kaptainwutax.tungsten.path.targets.BlockTarget;
+import kaptainwutax.tungsten.client.path.targets.BlockTarget;
 
 public class Arg<T> extends ArgBase {
     private final Class<T> _tType;
