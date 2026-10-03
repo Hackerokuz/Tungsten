@@ -206,9 +206,9 @@ public class PathExecutor {
 					Node n = this.path.get(i);
 					AgentStatus agentStatus = sim.simulate(n.input == null ? AgentInput.NONE : n.input);
 
-					if (!n.agentStatus.equals(agentStatus)) {
+					if (!n.agentStatus.position.equals(agentStatus.position) || !n.agentStatus.velocity.equals(agentStatus.velocity)) {
 						RenderHelper.renderNode(n);
-						TungstenModRenderContainer.RENDERERS.add(new Cuboid(agentStatus.position.subtract(0.01, 0, 0.01), new Vec3(0.02D, 0.2D, 0.02D), Color.BLUE));
+						TungstenModRenderContainer.RENDERERS.add(new Cuboid(agentStatus.position.subtract(0.01, 0, 0.01), new Vec3(0.02D, 0.2D, 0.02D), Color.RED));
 						Debug.logMessage(n.agentStatus.diff(agentStatus) + "");
 //						stop = true;
 					}

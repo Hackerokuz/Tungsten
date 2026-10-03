@@ -433,6 +433,9 @@ public final class AgentStatus {
             if (airDelta > 0) {
                 stringWriter.write(", Δair=" + airDelta);
             }
+            if (airDelta > 0) {
+                stringWriter.write(", Δair=" + airDelta);
+            }
             if (!changedBooleans.isEmpty()) {
                 stringWriter.write(", bools=" + changedBooleans);
             }

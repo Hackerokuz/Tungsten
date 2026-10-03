@@ -39,9 +39,9 @@ import org.jetbrains.annotations.NotNull;
 public class Node {
 
 	public Node parent;
-	public AgentEntity agent;
-	public AgentStatus agentStatus;
-	public AgentInput input;
+	public @NotNull AgentEntity agent;
+	public @NotNull AgentStatus agentStatus;
+	public @NotNull AgentInput input;
 	public double cost;
 	public double estimatedCostToGoal = 0;
 	public int heapPosition;
@@ -51,18 +51,19 @@ public class Node {
 
 	public Node(Node parent, @NotNull AgentEntity agent, @NotNull kaptainwutax.tungsten.client.render.Color color, double pathCost) {
 		this.parent = parent;
-		this.agent = AgentEntity.cloneFrom(agent, agent.snapshot());
-		this.agentStatus = this.agent.snapshot();
 		this.color = color;
 		this.cost = pathCost;
 		this.combinedCost = 0;
 		this.heapPosition = -1;
 		if (parent == null) {
-			this.sim = new AgentSimulator(this.agent);
+			this.sim = new AgentSimulator(AgentEntity.cloneFrom(agent, agent.snapshot()));
 		} else {
 			this.sim = parent.sim.copy();
 		}
-	}
+		this.input = AgentInput.NONE;
+		this.agent = this.sim.getAgent();
+		this.agentStatus = sim.simulate(input);
+    }
 
 	public Node(@NotNull Node parent, @NotNull Level world, @NotNull AgentInput input, @NotNull kaptainwutax.tungsten.client.render.Color color, double pathCost) {
 		this.parent = parent;
