@@ -4,8 +4,12 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
+import kaptainwutax.tungsten.client.Debug;
+import kaptainwutax.tungsten.client.TungstenClient;
 import kaptainwutax.tungsten.client.TungstenModDataContainer;
+import kaptainwutax.tungsten.client.TungstenModRenderContainer;
 import kaptainwutax.tungsten.client.helpers.*;
+import kaptainwutax.tungsten.client.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.client.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.client.path.specialMoves.ClimbALadderMove;
 import kaptainwutax.tungsten.client.path.specialMoves.CornerJump;
@@ -18,6 +22,8 @@ import kaptainwutax.tungsten.client.path.specialMoves.SprintJumpMove;
 import kaptainwutax.tungsten.client.path.specialMoves.SwimmingMove;
 import kaptainwutax.tungsten.client.path.specialMoves.WalkToNode;
 import kaptainwutax.tungsten.client.path.specialMoves.neo.NeoJump;
+import kaptainwutax.tungsten.client.render.Color;
+import kaptainwutax.tungsten.client.render.Cuboid;
 import kaptainwutax.tungsten.client.sim.AgentEntity;
 import kaptainwutax.tungsten.client.sim.AgentInput;
 import kaptainwutax.tungsten.client.sim.AgentSimulator;
@@ -41,22 +47,56 @@ public class Node {
 	public int heapPosition;
 	public double combinedCost;
 	public kaptainwutax.tungsten.client.render.Color color;
+	public @NotNull AgentSimulator sim;
 
 	public Node(Node parent, @NotNull AgentEntity agent, @NotNull kaptainwutax.tungsten.client.render.Color color, double pathCost) {
 		this.parent = parent;
-		this.agent = agent;
-		this.agentStatus = agent.snapshot();
+		this.agent = AgentEntity.cloneFrom(agent, agent.snapshot());
+		this.agentStatus = this.agent.snapshot();
 		this.color = color;
 		this.cost = pathCost;
 		this.combinedCost = 0;
 		this.heapPosition = -1;
+		if (parent == null) {
+			this.sim = new AgentSimulator(this.agent);
+		} else {
+			this.sim = parent.sim.copy();
+		}
 	}
 
 	public Node(@NotNull Node parent, @NotNull Level world, @NotNull AgentInput input, @NotNull kaptainwutax.tungsten.client.render.Color color, double pathCost) {
 		this.parent = parent;
-		this.agent = AgentEntity.cloneFrom(parent.agent, parent.agent.snapshot());
-		AgentSimulator sim = new AgentSimulator(this.agent);
-		this.agentStatus = sim.simulate(input);
+		this.sim = parent.sim.copy();
+//		Node node = parent;
+//		List<Node> path = new ArrayList<>();
+//		while (node.parent != null) {
+//			path.add(node);
+//			node = node.parent;
+//		}
+//		path.add(node);
+//		Collections.reverse(path);
+//
+//		AgentSimulator sim = AgentSimulator.fromLocalPlayer(TungstenModDataContainer.player, TungstenModDataContainer.player.getDeltaMovement());
+//		TungstenModRenderContainer.ERROR.clear();
+//        for (Node n : path) {
+//            AgentStatus agentStatus = sim.simulate(n.input == null ? AgentInput.NONE : n.input);
+//			if (!n.agentStatus.position.closerThan(agentStatus.position, 0.41)) {
+//				n.agent = sim.getAgent();
+//				n.agentStatus = agentStatus;
+//				RenderHelper.renderNode(n);
+//				TungstenModRenderContainer.ERROR.add(new Cuboid(agentStatus.position.subtract(0.01, 0, 0.01), new Vec3(0.02D, 0.06D, 0.02D), Color.WHITE));
+//				try {
+//					Thread.sleep(15);
+//				} catch (InterruptedException e) {
+////            throw new RuntimeException(e);
+//				}
+//			}
+//        }
+//
+//		TungstenModRenderContainer.ERROR.clear();
+
+        this.agentStatus = sim.simulate(input);
+		this.agent = sim.getAgent();
 		this.input = input;
 		this.color = color;
 		this.cost = pathCost;
@@ -286,7 +326,7 @@ public class Node {
 	    try {
 
             if (jump && sneak) return null;
-	        Node newNode = new Node(this, world, new AgentInput(forward, false, right, left, jump, sneak, sprint, agent.getYRot(), yaw),
+	        Node newNode = new Node(this, world, new AgentInput(forward, false, right, left, jump, sneak, sprint, agent.getXRot(), yaw),
 	                new kaptainwutax.tungsten.client.render.Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost);
 			NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
 	        if (newNode.agent.position().closerThan(nextBlockNode.getPos(true), 0.1, 0.4)) return null;
@@ -316,7 +356,7 @@ public class Node {
 //					AABB adjustedBox = newNode.agent.getBoundingBox().move(0, -0.5, 0).inflate(-0.001, 0, -0.001);
 //					Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(world, adjustedBox));
 //					if (blockCollisions.findAny().isEmpty() && isDoingLongJump) jump = true;
-					newNode = new Node(newNode, world, new AgentInput(forward, false, right, left, jump, sneak, sprint, agent.getYRot(), yaw),
+					newNode = new Node(newNode, world, new AgentInput(forward, false, right, left, jump, sneak, sprint, agent.getXRot(), yaw),
 							jump ? new kaptainwutax.tungsten.client.render.Color(150, 55, 85) : new kaptainwutax.tungsten.client.render.Color(0, 255, sneak ? 50 : 0), this.cost);
 					NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
 					if (!isDoingLongJump && jump && j > 1) break;
@@ -350,7 +390,7 @@ public class Node {
 	}
 
 	private void createAirborneNodes(Level world, BlockNode nextBlockNode, List<Node> nodes, boolean forward, boolean right, float yaw) {
-	    Node newNode = new Node(this, world, new AgentInput(forward, false, right, false, false, false, true, agent.getYRot(), yaw),
+	    Node newNode = new Node(this, world, new AgentInput(forward, false, right, false, false, false, true, agent.getXRot(), yaw),
 	            new kaptainwutax.tungsten.client.render.Color(0, 255, 255), this.cost);
 		NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
 
@@ -369,11 +409,11 @@ public class Node {
 	    		&& (TungstenModDataContainer.ignoreFallDamage || DistanceCalculator.getJumpHeight(agent.position().y(), newNode.agent.position().y()) > -3)) {
 	    	if (i > 60) break;
 	    	i++;
-	        newNode = new Node(newNode, world, new AgentInput(forward, false, right, false, false, false, true, agent.getYRot(), yaw),
+	        newNode = new Node(newNode, world, new AgentInput(forward, false, right, false, false, false, true, agent.getXRot(), yaw),
 	                new kaptainwutax.tungsten.client.render.Color(0, 255, 255), this.cost);
 			NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
 	    }
-        newNode = new Node(newNode, world, new AgentInput(forward, false, right, false, false, false, true, agent.getYRot(), yaw),
+        newNode = new Node(newNode, world, new AgentInput(forward, false, right, false, false, false, true, agent.getXRot(), yaw),
                 new kaptainwutax.tungsten.client.render.Color(0, 255, 255), this.cost);
 		NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
 

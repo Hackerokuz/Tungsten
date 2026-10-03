@@ -1,14 +1,19 @@
 package kaptainwutax.tungsten.client.path;
 
-import kaptainwutax.tungsten.Debug;
+import kaptainwutax.tungsten.client.Debug;
 import kaptainwutax.tungsten.client.TungstenClient;
 import kaptainwutax.tungsten.client.TungstenModRenderContainer;
 import kaptainwutax.tungsten.client.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.client.path.blockSpaceSearchAssist.BlockNode;
+import kaptainwutax.tungsten.client.render.Color;
+import kaptainwutax.tungsten.client.render.Cuboid;
+import kaptainwutax.tungsten.client.sim.AgentEntity;
 import kaptainwutax.tungsten.client.sim.AgentInput;
+import kaptainwutax.tungsten.client.sim.AgentSimulator;
+import kaptainwutax.tungsten.client.sim.AgentStatus;
 import net.minecraft.client.Options;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
@@ -183,8 +188,6 @@ public class PathExecutor {
 		    Node node = this.path.get(this.tick);
 
 		    if(node.input != null) {
-			    player.setXRot(node.input.yaw);
-			    player.setYRot(node.input.pitch);
 //			    if (player.isCreative()) player.stopGliding();
 	    		options.keyUp.setDown(node.input.forward);
 			    options.keyDown.setDown(node.input.back);
@@ -193,6 +196,25 @@ public class PathExecutor {
 			    options.keyJump.setDown(node.input.jump);
 			    options.keyShift.setDown(node.input.sneak);
 			    options.keySprint.setDown(node.input.sprint);
+				player.setXRot(node.input.pitch);
+				player.setYRot(node.input.yaw);
+
+				AgentSimulator sim = AgentSimulator.fromLocalPlayer(player, player.getDeltaMovement());
+				TungstenModRenderContainer.RENDERERS.clear();
+				RenderHelper.clearRenderers();
+				for (int i = this.tick; i < this.path.size(); i++) {
+					Node n = this.path.get(i);
+					AgentStatus agentStatus = sim.simulate(n.input == null ? AgentInput.NONE : n.input);
+
+					if (!n.agentStatus.equals(agentStatus)) {
+						RenderHelper.renderNode(n);
+						TungstenModRenderContainer.RENDERERS.add(new Cuboid(agentStatus.position.subtract(0.01, 0, 0.01), new Vec3(0.02D, 0.2D, 0.02D), Color.BLUE));
+						Debug.logMessage(n.agentStatus.diff(agentStatus) + "");
+//						stop = true;
+					}
+
+				}
+
 		    }
 //		    if(this.tick != 0 && options != null) {
 //			    this.path.get(this.tick - 1).agent.compare(player, optionsToPlayerInput(options), true);

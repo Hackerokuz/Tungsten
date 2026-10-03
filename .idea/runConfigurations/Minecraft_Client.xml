@@ -1,16 +1,24 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" factoryName="Application" name="Minecraft Client" type="Application">
-    <option name="MAIN_CLASS_NAME" value="net.fabricmc.devlaunchinjector.Main"/>
-    <module name="Tungsten.client"/>
-    <option name="PROGRAM_PARAMETERS" value=""/>
-    <option name="VM_PARAMETERS" value="-Dfabric.dli.config=/home/h/IdeaProjects/Tungsten/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=client -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotClient --sun-misc-unsafe-memory-access=allow --enable-native-access=ALL-UNNAMED"/>
-    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/run/"/>
-    <method v="2">
-      <option enabled="true" name="Make"/>
-    </method>
-    <envs>
-
-    </envs>
-    <shortenClasspath name="ARGS_FILE"/>
-  <classpathModifications/></configuration>
+  <configuration default="false" name="Minecraft Client" type="GradleRunConfiguration" factoryName="Gradle" >
+    <ExternalSystemSettings>
+      <option name="executionName" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$" />
+      <option name="externalSystemIdString" value="GRADLE" />
+      <option name="scriptParameters" value="" />
+      <option name="taskDescriptions">
+        <list />
+      </option>
+      <option name="taskNames">
+        <list>
+          <option value=":runClient" />
+        </list>
+      </option>
+      <option name="vmOptions" />
+    </ExternalSystemSettings>
+    <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+    <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+    <DebugAllEnabled>false</DebugAllEnabled>
+    <RunAsTest>false</RunAsTest>
+    <method v="2" />
+  </configuration>
 </component>

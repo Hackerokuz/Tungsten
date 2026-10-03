@@ -4,8 +4,6 @@
   "package": "kaptainwutax.tungsten.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "AccessorEntity",
-    "AccessorLivingEntity"
   ],
   "injectors": {
     "defaultRequire": 1

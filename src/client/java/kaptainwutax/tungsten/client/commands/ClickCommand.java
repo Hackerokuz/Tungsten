@@ -8,6 +8,8 @@ import kaptainwutax.tungsten.client.commandsystem.Command;
 import kaptainwutax.tungsten.client.commandsystem.CommandException;
 import net.minecraft.commands.CommandSource;
 
+import static kaptainwutax.tungsten.client.TungstenClient.clickModeEnum;
+
 public class ClickCommand extends Command {
 	public ClickCommand(TungstenClient mod) throws CommandException {
         super("click", "Activates click mode", mod);
@@ -17,7 +19,7 @@ public class ClickCommand extends Command {
 	public void build(LiteralArgumentBuilder<CommandSource> builder) {
 		
 		builder.then(argument("click mode", EnumArgumentType.of(clickModeEnum.class)).executes(context -> {
-        	TungstenMod.clickMode = context.getArgument("click mode", clickModeEnum.class);
+        	TungstenClient.clickMode = context.getArgument("click mode", clickModeEnum.class);
 			
 			return SINGLE_SUCCESS;
 		}));

@@ -2,14 +2,14 @@ package kaptainwutax.tungsten.client.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
-import kaptainwutax.tungsten.Debug;
-import kaptainwutax.tungsten.TungstenMod;
+import kaptainwutax.tungsten.client.Debug;
+import kaptainwutax.tungsten.client.TungstenClient;
 import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.commandsystem.Command;
-import net.minecraft.command.CommandSource;
+import net.minecraft.commands.CommandSource;
 
 public class StopCommand extends Command {
-	public StopCommand(TungstenMod mod) {
+	public StopCommand(TungstenClient mod) {
         super("stop", "Tell bot to stop", mod);
     }
 

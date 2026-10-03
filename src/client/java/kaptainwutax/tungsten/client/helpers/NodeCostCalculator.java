@@ -50,7 +50,7 @@ public class NodeCostCalculator {
             }
         }
 
-        if (agent.isDamaged) {
+        if (agent.hurtMarked) {
             addNodeCost += 8;
         }
         if (agent.onGround()) {
@@ -59,12 +59,12 @@ public class NodeCostCalculator {
 
         if (agent.onClimbable()) addNodeCost += 12.8;
 
-        if (Math.abs(agent.velX) < 0.01 && Math.abs(agent.velY) < 0.01 && Math.abs(agent.velZ) < 0.01) {
+        if (Math.abs(agent.getDeltaMovement().x()) < 0.01 && Math.abs(agent.getDeltaMovement().y()) < 0.01 && Math.abs(agent.getDeltaMovement().z()) < 0.01) {
             addNodeCost += 15;
         }
-        addNodeCost += Math.abs(agent.velX) * -1;
-        addNodeCost += Math.abs(agent.velY) * -1;
-        addNodeCost += Math.abs(agent.velZ) * -1;
+        addNodeCost += Math.abs(agent.getDeltaMovement().x()) * -1;
+        addNodeCost += Math.abs(agent.getDeltaMovement().y()) * -1;
+        addNodeCost += Math.abs(agent.getDeltaMovement().z()) * -1;
         if (agent.horizontalCollision) {
             addNodeCost += 20.0004;
         }

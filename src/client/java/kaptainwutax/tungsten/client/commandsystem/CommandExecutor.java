@@ -8,32 +8,42 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
-import kaptainwutax.tungsten.Debug;
-import kaptainwutax.tungsten.Tungsten;
+import kaptainwutax.tungsten.client.Debug;
+import kaptainwutax.tungsten.client.TungstenClient;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
+import net.minecraft.network.chat.Component;
 
 public class CommandExecutor {
 
 	public static final CommandDispatcher<net.minecraft.commands.CommandSource> DISPATCHER = new CommandDispatcher<>();
     private final HashMap<String, Command> _commandSheet = new HashMap<>();
-    private final Tungsten _mod;
+    private final TungstenClient _mod;
 
-    public CommandExecutor(Tungsten mod) {
+    public CommandExecutor(TungstenClient mod) {
         _mod = mod;
     }
 
-    public void registerNewCommand(Command... commands) {
-        for (Command command : commands) {
-            if (_commandSheet.containsKey(command.getName())) {
-            	Tungsten.LOG.info("Command with name " + command.getName() + " already exists! Can't register that name twice.");
-                continue;
-            }
-            command.registerTo(DISPATCHER);
-            _commandSheet.put(command.getName(), command);
-        }
-    }
+//    public void registerNewCommand(Command... commands) {
+//        for (Command command : commands) {
+//            if (_commandSheet.containsKey(command.getName())) {
+//                TungstenClient.LOG.info("Command with name " + command.getName() + " already exists! Can't register that name twice.");
+//                continue;
+//            }
+//            command.registerTo(DISPATCHER);
+//            _commandSheet.put(command.getName(), command);
+//        }
+//
+//        ClientCommandRegistrationCallback.EVENT.register((dispatcher, commandBuildContext) -> {
+//            dispatcher.register(ClientCommands.literal("clienttater").executes(context -> {
+//                context.getSource().sendFeedback(Component.literal("Called /clienttater with no arguments."));
+//                return 1;
+//            }));
+//        });
+//    }
 
     private String getCommandPrefix() {
-        return Tungsten.getCommandPrefix();
+        return TungstenClient.getCommandPrefix();
     }
 
     public boolean isClientCommand(String line) {
@@ -48,16 +58,16 @@ public class CommandExecutor {
         }
         Command command = commands[index];
         String part = parts[index];
-        try {
-            if (command == null) {
-                getException.accept(new CommandException("Invalid command:" + part));
-                executeRecursive(commands, parts, index + 1, onFinish, getException);
-            } else {
-                command.run(_mod, part.contains("@") ? part.split("@")[1] : part, () -> executeRecursive(commands, parts, index + 1, onFinish, getException));
-            }
-        } catch (CommandException ae) {
-//            getException.accept(new CommandException(ae.getMessage() + "\nUsage: " + command.getHelpRepresentation(), ae));
-        }
+//        try {
+//            if (command == null) {
+//                getException.accept(new CommandException("Invalid command:" + part));
+//                executeRecursive(commands, parts, index + 1, onFinish, getException);
+//            } else {
+////                command.run(_mod, part.contains("@") ? part.split("@")[1] : part, () -> executeRecursive(commands, parts, index + 1, onFinish, getException));
+//            }
+//        } catch (CommandException ae) {
+////            getException.accept(new CommandException(ae.getMessage() + "\nUsage: " + command.getHelpRepresentation(), ae));
+//        }
     }
 
     public void execute(String line, Runnable onFinish, Consumer<CommandException> getException) {
@@ -79,7 +89,7 @@ public class CommandExecutor {
     
     
     public static void dispatch(String message) throws CommandSyntaxException {
-        DISPATCHER.execute(message, Tungsten.mc.getNetworkHandler().getCommandSource());
+//        DISPATCHER.execute(message, TungstenClient.mc.getNetworkHandler().getCommandSource());
     }
 
     public void execute(String line, Consumer<CommandException> getException) {

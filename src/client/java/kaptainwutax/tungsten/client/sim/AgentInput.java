@@ -77,7 +77,7 @@ public final class AgentInput {
         AgentEntity agent
     ) {
         return new AgentInput(forward, back, left, right, jump, sneak, sprint,
-            agent.getXRot(), agent.getYRot());
+            agent.getXRot(), agent.getXRot());
     }
 
     public Input toInput() {

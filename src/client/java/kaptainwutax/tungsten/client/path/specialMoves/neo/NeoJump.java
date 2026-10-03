@@ -4,36 +4,34 @@ import java.util.stream.Stream;
 
 import com.google.common.collect.Streams;
 
-import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.client.TungstenModDataContainer;
-import kaptainwutax.tungsten.agent.Agent;
 import kaptainwutax.tungsten.client.helpers.DirectionHelper;
 import kaptainwutax.tungsten.client.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.client.helpers.NodeCostCalculator;
 import kaptainwutax.tungsten.client.path.Node;
-import kaptainwutax.tungsten.client.path.PathInput;
 import kaptainwutax.tungsten.client.path.blockSpaceSearchAssist.BlockNode;
-import kaptainwutax.tungsten.render.Color;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.WorldView;
+import kaptainwutax.tungsten.client.render.Color;
+import kaptainwutax.tungsten.client.sim.AgentEntity;
+import kaptainwutax.tungsten.client.sim.AgentInput;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class NeoJump {
 	
 	public static Node generateMove(Node parent, BlockNode nextBlockNode) {
-		WorldView world = TungstenModDataContainer.world;
-		Agent agent = parent.agent;
+		Level world = TungstenModDataContainer.world;
+		AgentEntity agent = parent.agent;
 		
 		Direction jumpTowardsDirection = DirectionHelper.getHorizontalDirectionFromPos(nextBlockNode.previous.getPos(true), nextBlockNode.getPos(true));
-		float jumpTowardsRotation = jumpTowardsDirection.getPositiveHorizontalDegrees();
+		float jumpTowardsRotation = jumpTowardsDirection.getRotation().angle();
 		Direction neoDirection = nextBlockNode.getNeoSide();
-		float neoRotation = neoDirection.getPositiveHorizontalDegrees();
+		float neoRotation = neoDirection.getRotation().angle();
 
 		float desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
         double distance = DistanceCalculator.getHorizontalEuclideanDistance(agent.getPos(), nextBlockNode.getPos(true));
-	    Node newNode = new Node(parent, world, new PathInput(false, false, false, false, false, false, false, agent.pitch, desiredYaw),
+	    Node newNode = new Node(parent, world, new AgentInput(false, false, false, false, false, false, false, agent.getXRot(), desiredYaw),
 	    				new Color(0, 255, 150), parent.cost);
 		NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
         
@@ -47,7 +45,7 @@ public class NeoJump {
 	    	  desiredYaw = nudgeRotation(neoRotation, 35);
 
         while (limit < 40 && jump == false && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-1) {
-            Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.04, 0, -0.04);
+            AABB adjustedBox = newNode.agent.getBoundingBox().move(0, -0.5, 0).inflate(-0.04, 0, -0.04);
         	limit++;
         	Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenModDataContainer.world, adjustedBox));
 //        	RenderHelper.renderNode(newNode);
@@ -55,7 +53,7 @@ public class NeoJump {
         		desiredYaw = nudgeRotation(jumpTowardsRotation, 5);
         		jump = true;
         	}
-            newNode = new Node(newNode, world, new PathInput(true, false, false, false, jump, false, true, agent.pitch, desiredYaw),
+            newNode = new Node(newNode, world, new AgentInput(true, false, false, false, jump, false, true, agent.getXRot(), desiredYaw),
             		new Color(0, 255, 150), newNode.cost);
 			NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
             if (jump) break;
@@ -63,7 +61,7 @@ public class NeoJump {
         
 
         limit = 0;
-        while (limit < 40 && !newNode.agent.onGround && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-1) {
+        while (limit < 40 && !newNode.agent.onGround() && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-1) {
         	limit++;
 //        	RenderHelper.renderNode(newNode);
 //            try {
@@ -72,12 +70,12 @@ public class NeoJump {
 //				// TODO Auto-generated catch block
 //				e.printStackTrace();
 //			}
-            newNode = new Node(newNode, world, new PathInput(true, false, false, false, false, false, true, agent.pitch, 
+            newNode = new Node(newNode, world, new AgentInput(true, false, false, false, false, false, true, agent.getXRot(),
             		(neoRotation == 270 || neoRotation == 90) ?
             			nudgeRotation(jumpTowardsRotation, distance < 2 ? 65 : 35)
         			:
         				nudgeRotation(jumpTowardsRotation, distance < 2 ? -65 : -35)
-            		
+
             		),
             		new Color(0, 255, 150), newNode.cost);
 			NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));

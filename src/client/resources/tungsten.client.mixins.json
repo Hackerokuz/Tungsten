@@ -7,11 +7,7 @@
     "MixinMinecraftClient",
     "MixinClientPlayerEntity",
     "MixinDebugRenderer",
-    "MixinShapeContext",
-    "MixinClientPlayNetworkHandler",
-    "MixinWorldChunk",
     "MixinMinecraftClient",
-    "MixinClientCommandSource",
     "GameRendererMixin"
   ],
   "injectors": {

@@ -2,17 +2,13 @@ package kaptainwutax.tungsten.client.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
-import kaptainwutax.tungsten.Debug;
-import kaptainwutax.tungsten.TungstenMod;
+import kaptainwutax.tungsten.client.Debug;
 import kaptainwutax.tungsten.client.TungstenClient;
 import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.commands.arguments.GotoTargetArgumentType;
 import kaptainwutax.tungsten.client.commandsystem.Command;
 import kaptainwutax.tungsten.client.commandsystem.CommandException;
 import kaptainwutax.tungsten.client.path.targets.BlockTarget;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.command.CommandSource;
-import net.minecraft.commands.CommandSource;
 
 public class GotoCommand extends Command {
 	

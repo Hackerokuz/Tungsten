@@ -16,12 +16,12 @@ public final class AgentSimulatorExample {
     /** 1. Build a simulator that mirrors the live player and run one tick of forward sprint. */
     public static AgentStatus oneTickFromPlayer() {
         LocalPlayer player = Minecraft.getInstance().player;
-        AgentSimulator sim = AgentSimulator.fromLocalPlayer(player);
+        AgentSimulator sim = AgentSimulator.fromLocalPlayer(player, player.getDeltaMovement());
         return sim.simulate(new AgentInput(
             /* forward */ true, /* back */ false, /* left */ false, /* right */ false,
             /* jump   */ false, /* sneak*/ false, /* sprint*/ true,
             /* pitch  */ player.getXRot(),
-            /* yaw    */ player.getYRot()
+            /* yaw    */ player.getXRot()
         ));
     }
 

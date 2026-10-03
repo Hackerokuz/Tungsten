@@ -14,7 +14,7 @@ public class ClimbALadderMove {
 	public static Node generateMove(Node parent, BlockNode nextBlockNode) {
 		Level world = TungstenModDataContainer.world;
 		AgentEntity agent = parent.agent;
-	    Node newNode = new Node(parent, world, new AgentInput(false, false, false, false, false, false, false, agent.getYRot(), agent.getXRot()),
+	    Node newNode = new Node(parent, world, new AgentInput(false, false, false, false, false, false, false, agent.getXRot(), agent.getXRot()),
 	    				new Color(0, 255, 150), parent.cost);
 		NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
 	    
@@ -29,7 +29,7 @@ public class ClimbALadderMove {
 //				e.printStackTrace();
 //			}
 
-            newNode = new Node(newNode, world, new AgentInput(false, false, false, false, true, false, false, agent.getYRot(), agent.getXRot()),
+            newNode = new Node(newNode, world, new AgentInput(false, false, false, false, true, false, false, agent.getXRot(), agent.getXRot()),
             		new Color(0, 255, 150), newNode.cost);
 			NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
         }

@@ -8,12 +8,14 @@ import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.helpers.DirectionHelper;
 import kaptainwutax.tungsten.client.helpers.NodeCostCalculator;
 import kaptainwutax.tungsten.client.path.Node;
-import kaptainwutax.tungsten.client.path.PathInput;
 import kaptainwutax.tungsten.client.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.client.render.Color;
 import kaptainwutax.tungsten.client.sim.AgentEntity;
+import kaptainwutax.tungsten.client.sim.AgentInput;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class CornerJump {
@@ -23,7 +25,7 @@ public class CornerJump {
 		AgentEntity agent = parent.agent;
 
 		float desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
-	    Node newNode = new Node(parent, world, new PathInput(false, false, false, false, false, false, false, agent.pitch, desiredYaw),
+	    Node newNode = new Node(parent, world, new AgentInput(false, false, false, false, false, false, false, agent.getXRot(), desiredYaw),
 	    				new Color(0, 255, 150), parent.cost);
 		NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
 
@@ -57,7 +59,7 @@ public class CornerJump {
         		jump = true;
         	}
 
-            newNode = new Node(newNode, world, new PathInput(true, false, false, false, jump, false, true, agent.pitch, desiredYaw),
+            newNode = new Node(newNode, world, new AgentInput(true, false, false, false, jump, false, true, agent.getXRot(), desiredYaw),
             		new Color(0, 255, 150), newNode.cost);
 			NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
             if (jump) break;
@@ -66,9 +68,9 @@ public class CornerJump {
 
         limit = 0;
         Direction dir = DirectionHelper.getHorizontalDirectionFromPos(nextBlockNode.previous.getPos(), nextBlockNode.getPos());
-        Vec3d offsetVec = new Vec3d(0, 0, 0).offset(dir, 0.5);
+        Vec3 offsetVec = new Vec3(0, 0, 0).relative(dir, 0.5);
         while (limit < 40 && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-1) {
-            Box adjustedBox = newNode.agent.box.offset(offsetVec).expand(-0.001, 0, -0.001);
+            AABB adjustedBox = newNode.agent.getBoundingBox().move(offsetVec).inflate(-0.001, 0, -0.001);
         	limit++;
         	Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenModDataContainer.world, adjustedBox));
 //        	RenderHelper.renderNode(newNode, TungstenMod.TEST);
@@ -79,14 +81,14 @@ public class CornerJump {
 //    				// TODO Auto-generated catch block
 //    				e.printStackTrace();
 //    			}
-                if (newNode.agent.onGround)
+                if (newNode.agent.onGround())
         		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(newNode.agent.getPos(), nextBlockNode.getPos(true));
         	}
-            newNode = new Node(newNode, world, new PathInput(true, false, false, false, false, false, true, agent.pitch, desiredYaw),
+            newNode = new Node(newNode, world, new AgentInput(true, false, false, false, false, false, true, agent.getXRot(), desiredYaw),
             		new Color(0, 255, 150), newNode.cost);
 			NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
         	limit++;
-        	if (newNode.agent.getPos().isWithinRangeOf(nextBlockNode.getPos(true), 0.7, 0.8)) break;
+        	if (newNode.agent.getPos().closerThan(nextBlockNode.getPos(true), 0.7, 0.8)) break;
         }
             
         return newNode;

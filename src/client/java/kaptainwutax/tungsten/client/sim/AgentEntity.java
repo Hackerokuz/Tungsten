@@ -1,9 +1,11 @@
 package kaptainwutax.tungsten.client.sim;
 
 import com.mojang.authlib.GameProfile;
+import kaptainwutax.tungsten.client.helpers.MathHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
@@ -17,10 +19,13 @@ import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -163,7 +168,7 @@ public class AgentEntity extends Player {
 
     /** Teleport, zero transient flags, clear input. Used to seed the agent at an exact state. */
     public void teleportRest(double x, double y, double z, double vx, double vy, double vz) {
-        float keepYaw = this.getYRot();
+        float keepYaw = this.getXRot();
         this.setPos(x, y, z);
         this.setDeltaMovement(vx, vy, vz);
         this.setYRot(keepYaw);
@@ -186,7 +191,7 @@ public class AgentEntity extends Player {
         Checkpoint c = new Checkpoint();
         c.pos = this.position();
         c.velocity = this.getDeltaMovement();
-        c.yaw = this.getYRot();
+        c.yaw = this.getXRot();
         c.pitch = this.getXRot();
         c.onGround = this.onGround();
         c.horizontalCollision = this.horizontalCollision;
@@ -249,7 +254,7 @@ public class AgentEntity extends Player {
         return new AgentStatus(
             new Vec3(pos.x, pos.y, pos.z),
             new Vec3(vel.x, vel.y, vel.z),
-            this.getYRot(),
+            this.getXRot(),
             this.getXRot(),
             this.onGround(),
             this.horizontalCollision,
@@ -465,7 +470,7 @@ public class AgentEntity extends Player {
             speed *= (float) this.getAttributeValue(Attributes.SNEAKING_SPEED);
         }
         Vec2 movement = modifyInput(this.input.moveVector);
-        double yawRad = this.getYRot() * Math.PI / 180.0;
+        double yawRad = this.getXRot() * Math.PI / 180.0;
         double cosYaw = Math.cos(yawRad);
         double sinYaw = Math.sin(yawRad);
         double worldX = movement.x * cosYaw - movement.y * sinYaw;
@@ -563,7 +568,7 @@ public class AgentEntity extends Player {
     }
 
     private double computeCollisionAngleDegrees(double movementX, double movementZ) {
-        float yRotInRadians = this.getYRot() * (float) (Math.PI / 180.0);
+        float yRotInRadians = this.getXRot() * (float) (Math.PI / 180.0);
         double yRotSin = Mth.sin(yRotInRadians);
         double yRotCos = Mth.cos(yRotInRadians);
         double globalXA = this.xxa * yRotCos - this.zza * yRotSin;
@@ -710,6 +715,26 @@ public class AgentEntity extends Player {
         // Subtle: the repo records (before, dx, dy, dz, axisX-dominant) tuples. We only need
         // an opaque Vec3 list to honor the API; richer structure belongs in the repo version.
         super.move(type, motion);
+    }
+
+    public Iterable<VoxelShape> getBlockCollisions(Level level, AABB box) {
+        return level.getBlockCollisions(this, box);
+    }
+
+    public BlockPos getLandingPos(Level world) {
+        BlockPos pos = new BlockPos(this.getBlockX(), (int) Math.floor(this.getY() - (double)0.2F), this.getBlockZ());
+
+        if(!world.getBlockState(pos).isAir()) {
+            return pos;
+        }
+
+        BlockState state = world.getBlockState(pos.below());
+
+        if(state.getBlock() instanceof FenceGateBlock || state.is(BlockTags.FENCES) || state.is(BlockTags.WALLS)) {
+            return pos.below();
+        }
+
+        return pos;
     }
 
     // ------------------------------------------------------------------

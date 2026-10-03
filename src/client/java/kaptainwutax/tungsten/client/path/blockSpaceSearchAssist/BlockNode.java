@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
+import kaptainwutax.tungsten.Tungsten;
+import kaptainwutax.tungsten.client.Debug;
+import kaptainwutax.tungsten.client.TungstenClient;
 import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.TungstenModRenderContainer;
 import kaptainwutax.tungsten.client.helpers.BlockShapeChecker;
@@ -171,6 +174,7 @@ public class BlockNode {
 				chachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
 				return chachedWithOffsetPos;
 			}
+
 			if (BlockShapeChecker.getBlockHeight(this.getBlockPos().below(), world) > 1) {
 				chachedWithOffsetPos = BlockPosShifter.getPosOnLadder(this, world);
 				chachedWithOffsetPos = chachedWithOffsetPos.add(0, BlockShapeChecker.getBlockHeight(this.getBlockPos().below(), world)-1, 0);
@@ -247,7 +251,7 @@ public class BlockNode {
 //		nodes.removeIf((child) -> {
 //			return shouldRemoveNode(world, child);
 //		});
-		
+
 		 List<BlockNode> filtered = nodes.parallelStream()
 			        .filter(node -> !shouldRemoveNode(world, node))
 			        .collect(Collectors.toList());
@@ -293,7 +297,7 @@ public class BlockNode {
 		if (endNode == null) return false;
 		
 		// When running bot in normal environment instead of parkour you need to turn on Neo and Corner jump checks to avoid cases where it can get stuck
-		boolean shouldCheckNeo = !start.closerToCenterThan(end.getCenter(), 1.2) && start.closerToCenterThan(end.getCenter(), 4.2);
+		boolean shouldCheckNeo = !start.closerThan(end, 1.2) && start.closerThan(end, 4.2);
 		if (shouldCheckNeo) {
 			Direction neoDirection = NeoMovementHelper.getNeoDirection(world, start, end, shouldRender, shouldSlow);
 			if (neoDirection != null) {
@@ -623,7 +627,7 @@ public class BlockNode {
 //
 		if (isJumpImpossible(world, child))
 			return true;
-		
+
 		// TODO: Fix bottom slab under fence thing
 		if (!wasCleared(world, getBlockPos(), child.getBlockPos(), this, child)) {
 			return true;

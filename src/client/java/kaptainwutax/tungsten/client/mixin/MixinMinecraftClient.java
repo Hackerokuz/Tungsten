@@ -1,40 +1,49 @@
 package kaptainwutax.tungsten.client.mixin;
 
+import kaptainwutax.tungsten.client.TungstenClient;
+import kaptainwutax.tungsten.client.sim.AgentSimulator;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.client.TungstenModDataContainer;
-import kaptainwutax.tungsten.world.VoxelWorld;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.world.ClientWorld;
 
-@Mixin(MinecraftClient.class)
+@Mixin(Minecraft.class)
 public class MixinMinecraftClient {
 
-	@Shadow @Nullable public ClientWorld world;
-	@Shadow @Nullable public GameRenderer gameRenderer;
+	@Shadow @Nullable public ClientLevel level;
+	@Final
+    @Shadow @Nullable public GameRenderer gameRenderer;
 
 	@Inject(at = @At("HEAD"), method = "tick")
 	private void tick(CallbackInfo info) {
 		if (gameRenderer != TungstenModDataContainer.gameRenderer) {
 	        TungstenModDataContainer.gameRenderer = this.gameRenderer;
 		}
-		if (MinecraftClient.getInstance().player != TungstenModDataContainer.player) {
-	        TungstenModDataContainer.player = MinecraftClient.getInstance().player;
+		if (Minecraft.getInstance().player != TungstenModDataContainer.player) {
+	        TungstenModDataContainer.player = Minecraft.getInstance().player;
 		}
-		if(this.world == null) {
-			TungstenMod.WORLD = null;
-		} else if(TungstenMod.WORLD == null) {
-			TungstenMod.WORLD = new VoxelWorld(this.world);
-		} else if(TungstenMod.WORLD.parent != this.world) {
-			TungstenMod.WORLD = new VoxelWorld(this.world);
+		if(this.level == null) {
+			TungstenClient.WORLD = null;
+			TungstenModDataContainer.world = null;
+		} else if(TungstenClient.WORLD == null) {
+			TungstenClient.WORLD = this.level;
+		} else if(TungstenClient.WORLD != this.level) {
+			TungstenClient.WORLD = this.level;
+		}
+		if(TungstenModDataContainer.world == null) {
+			TungstenModDataContainer.world = this.level;
+		} else if(TungstenModDataContainer.world != this.level) {
+			TungstenModDataContainer.world = this.level;
 		}
 	}
-	
+
 }

@@ -1,6 +1,5 @@
 package kaptainwutax.tungsten.client.path;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -20,7 +19,9 @@ import java.util.stream.Collectors;
 
 import com.google.common.util.concurrent.AtomicDoubleArray;
 
-import kaptainwutax.tungsten.Debug;
+import kaptainwutax.tungsten.Tungsten;
+import kaptainwutax.tungsten.client.Debug;
+import kaptainwutax.tungsten.client.TungstenClient;
 import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.TungstenModRenderContainer;
 import kaptainwutax.tungsten.client.helpers.*;
@@ -30,11 +31,14 @@ import kaptainwutax.tungsten.client.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.client.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.client.path.blockSpaceSearchAssist.Goal;
 import kaptainwutax.tungsten.client.path.calculators.BinaryHeapOpenSet;
+import kaptainwutax.tungsten.client.render.Color;
+import kaptainwutax.tungsten.client.render.Cuboid;
 import kaptainwutax.tungsten.client.sim.AgentEntity;
+import kaptainwutax.tungsten.client.sim.AgentInput;
 import kaptainwutax.tungsten.client.sim.AgentSimulator;
+import kaptainwutax.tungsten.client.sim.AgentStatus;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.CarpetBlock;
 import net.minecraft.world.level.block.LadderBlock;
@@ -128,14 +132,14 @@ public class PathFinder {
 				prev = prev.parent;
 			}
 			double currFallDist = DistanceCalculator.getJumpHeight(prev.agent.getPos().y, n.agent.getPos().y);
-			if (currFallDist < -3 || prev.agent.isDamaged || n.agent.isDamaged) {
+			if (currFallDist < -3 || prev.agent.hurtMarked || n.agent.hurtMarked) {
 				return true;
 			}
 		} while (!prev.agent.onGround() && !prev.agent.isInWater());
 
 		if (prev == null) return false;
 
-        return DistanceCalculator.getJumpHeight(prev.agent.getPos().y, n.agent.getPos().y) < -3 || prev.agent.isDamaged || n.agent.isDamaged;
+        return DistanceCalculator.getJumpHeight(prev.agent.getPos().y, n.agent.getPos().y) < -3 || prev.agent.hurtMarked || n.agent.hurtMarked;
     }
 
 	private void search(Level world, Vec3 target, LocalPlayer player) {
@@ -149,13 +153,13 @@ public class PathFinder {
 	private void search(Level world, Node start, Vec3 target, LocalPlayer player, int failedAttempts) {
 	    boolean failing = true;
 	    TungstenModRenderContainer.RENDERERS.clear();
-	
+
 	    long startTime = System.currentTimeMillis();
 	    long primaryTimeoutTime = startTime + timeoutLimit;
 		numNodesConsidered.set(0);
 	    int timeCheckInterval = 1 << 3;
 	    double minVelocity = BlockStateChecker.isAnyWater(world.getBlockState(new BlockPos((int) target.x(), (int) target.y(), (int) target.z()))) ? 0.2 :  0.07;
-	
+
 	    if (player.position().distanceTo(target) < 1.0) {
 	        Debug.logMessage("Already at target location!");
 	        return;
@@ -297,15 +301,15 @@ public class PathFinder {
 	        Debug.logMessage("stopped!");
 	        stop.set(false);
 	    } else if (TungstenModDataContainer.PATHFINDER.openSet.isEmpty()) {
-			if (failedAttempts < 2 && TungstenModDataContainer.EXECUTOR.path != null) {
-				RenderHelper.clearRenderers();
-				closed.clear();
-				PathFinder.blockPath = Optional.empty();
-				Node lastNode = TungstenModDataContainer.EXECUTOR.path.getLast();
-
-				search(world, lastNode, target, player, failedAttempts+1);
-				return;
-			}
+//			if (failedAttempts < 2 && TungstenModDataContainer.EXECUTOR.path != null) {
+//				RenderHelper.clearRenderers();
+//				closed.clear();
+//				PathFinder.blockPath = Optional.empty();
+//				Node lastNode = TungstenModDataContainer.EXECUTOR.path.getLast();
+//
+//				search(world, lastNode, target, player, failedAttempts+1);
+//				return;
+//			}
 			Debug.logMessage("Ran out of nodes!");
 	    }
 	    RenderHelper.clearRenderers();

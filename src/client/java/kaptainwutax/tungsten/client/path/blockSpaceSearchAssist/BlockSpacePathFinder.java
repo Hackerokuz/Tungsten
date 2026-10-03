@@ -2,7 +2,7 @@ package kaptainwutax.tungsten.client.path.blockSpaceSearchAssist;
 
 import java.util.*;
 
-import kaptainwutax.tungsten.Debug;
+import kaptainwutax.tungsten.client.Debug;
 import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.TungstenModRenderContainer;
 import kaptainwutax.tungsten.client.helpers.BlockShapeChecker;
@@ -68,7 +68,7 @@ public class BlockSpacePathFinder {
         TungstenModRenderContainer.RENDERERS.clear();
 		Debug.logMessage("Searching...");
 		start = new BlockNode(start.getBlockPos(), goal, player, world);
-		
+
 		double[] bestHeuristicSoFar = new double[COEFFICIENTS.length];//keep track of the best node by the metric of (estimatedCostToGoal + cost / COEFFICIENTS[i])
 		for (int i = 0; i < COEFFICIENTS.length; i++) {
             bestHeuristicSoFar[i] = computeHeuristic(start.getPos(), target, world);
@@ -93,7 +93,7 @@ public class BlockSpacePathFinder {
             }
 			numNodes++;
 			BlockNode next = openSet.removeLowest();
-			
+
 			if (closed.contains(next)) continue;
 			
 			closed.add(next);

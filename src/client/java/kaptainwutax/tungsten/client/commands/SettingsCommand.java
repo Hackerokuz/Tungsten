@@ -3,14 +3,14 @@ package kaptainwutax.tungsten.client.commands;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
-import kaptainwutax.tungsten.TungstenMod;
+import kaptainwutax.tungsten.client.TungstenClient;
 import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.commandsystem.Command;
-import net.minecraft.command.CommandSource;
+import net.minecraft.commands.CommandSource;
 
 public class SettingsCommand extends Command {
 
-	public SettingsCommand(TungstenMod mod) {
+	public SettingsCommand(TungstenClient mod) {
 		super("settings", "Handles bot settings", mod);
 	}
 

@@ -76,10 +76,10 @@ public class DistanceCalculator {
         BlockPos blockPos = agent.blockPosition(); // Block the player is standing on
 		float f = agent.getYRot() * (float) (Math.PI / 180.0);
 		float g = -agent.getXRot() * (float) (Math.PI / 180.0);
-		float h = MathHelper.cos(g);
-		float i = MathHelper.sin(g);
-		float j = MathHelper.cos(f);
-		float k = MathHelper.sin(f);
+		float h = (float) Math.cos(g);
+		float i = (float) Math.sin(g);
+		float j = (float) Math.cos(f);
+		float k = (float) Math.sin(f);
 		Vec3 lookDirection =  new Vec3((double)(i * j), (double)(-k), (double)(h * j)); // Direction player is looking
 
         // Determine block bounds relative to the player's position
@@ -104,7 +104,7 @@ public class DistanceCalculator {
             }
         }
 
-        return MathHelper.clamp(distance, 0.0, 1.0); // Ensure distance is within block bounds
+        return Math.clamp(distance, 0.0, 1.0); // Ensure distance is within block bounds
     }
     
     /**

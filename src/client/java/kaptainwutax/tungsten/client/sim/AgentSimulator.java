@@ -65,7 +65,7 @@ public final class AgentSimulator {
         }
         Vec3 start = player.position();
         Vec3 vel = startVelocity != null ? startVelocity : Vec3.ZERO;
-        AgentEntity entity = new AgentEntity(simWorld, player.getGameProfile(), start, vel, player.getYRot());
+        AgentEntity entity = new AgentEntity(simWorld, player.getGameProfile(), start, vel, player.getXRot());
         // Copy attribute base values so movement-speed buffs / sprint modifiers are honest.
         entity.getAttributes().assignBaseValues(player.getAttributes());
         entity.setXRot(player.getXRot());
@@ -89,6 +89,36 @@ public final class AgentSimulator {
 
     public AgentEntity getAgent() {
         return agent;
+    }
+
+    /**
+     * Deep-clone this simulator. The returned wrapper holds a fresh {@link AgentEntity}
+     * with the same start state and current state as this one — useful for branching
+     * (e.g. "try this input without mutating the master sim"). The clone is independent
+     * and can be ticked on any thread.
+     */
+    public AgentSimulator copy() {
+        AgentEntity src = this.agent;
+        AgentEntity clone = new AgentEntity(
+                src.level(), src.getGameProfile(),
+                src.startPosition, src.startVelocity, src.startYaw
+        );
+        // Current state
+        clone.setPos(src.position());
+        clone.setDeltaMovement(src.getDeltaMovement());
+        clone.setYRot(src.getYRot());
+        clone.setXRot(src.getXRot());
+        clone.setOnGround(src.onGround());
+        clone.horizontalCollision = src.horizontalCollision;
+        clone.minorHorizontalCollision = src.minorHorizontalCollision;
+        clone.setSprinting(src.isSprinting());
+        clone.setSwimming(src.isSwimming());
+        // Config
+        clone.setKinematic(src.isKinematic());
+        // new AgentEntity already calls resetPlayer() in its ctor, which seeds the
+        // checkpoint from startPosition/startYaw; the overlays above restore the current
+        // state so the clone is a true snapshot of `src` at call time.
+        return new AgentSimulator(clone);
     }
 
     // ------------------------------------------------------------------

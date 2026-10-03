@@ -2,6 +2,7 @@ package kaptainwutax.tungsten.client;
 
 import kaptainwutax.tungsten.client.path.PathExecutor;
 import kaptainwutax.tungsten.client.path.PathFinder;
+import kaptainwutax.tungsten.client.sim.AgentSimulator;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.level.Level;
 

@@ -1,4 +1,4 @@
-package kaptainwutax.tungsten;
+package kaptainwutax.tungsten.client;
 
 import net.minecraft.network.chat.Component;
 

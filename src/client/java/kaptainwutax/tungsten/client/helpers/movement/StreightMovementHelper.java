@@ -1,15 +1,16 @@
 package kaptainwutax.tungsten.client.helpers.movement;
 
 import kaptainwutax.tungsten.client.TungstenModDataContainer;
+import kaptainwutax.tungsten.client.TungstenModRenderContainer;
 import kaptainwutax.tungsten.client.helpers.DirectionHelper;
 import kaptainwutax.tungsten.client.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.client.helpers.MovementHelper;
+import kaptainwutax.tungsten.client.render.Color;
+import kaptainwutax.tungsten.client.render.Cuboid;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-
-import java.awt.*;
 
 public class StreightMovementHelper {
 	
@@ -60,9 +61,9 @@ public class StreightMovementHelper {
 	        boolean isOneBlockAway = DistanceCalculator.getHorizontalEuclideanDistance(startPos, endPos) <= 1;
 	        
 	        if (isOneBlockAway) {
-	        	Direction dir = DirectionHelper.getHorizontalDirectionFromPos(startPos.getCenter(), endPos.getCenter());
-	        	int offsetX = dir.getOffsetX();
-	        	int offsetZ = dir.getOffsetZ();
+	        	Direction dir = DirectionHelper.getHorizontalDirectionFromPos(startPos, endPos);
+	        	int offsetX = dir.getStepX();
+	        	int offsetZ = dir.getStepZ();
 
 	            currPos.set(x, y + 2, z);
 	            

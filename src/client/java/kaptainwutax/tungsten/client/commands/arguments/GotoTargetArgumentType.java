@@ -16,23 +16,22 @@ import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
-import kaptainwutax.tungsten.Debug;
-import kaptainwutax.tungsten.TungstenMod;
+import kaptainwutax.tungsten.client.Debug;
+import kaptainwutax.tungsten.client.TungstenClient;
 import kaptainwutax.tungsten.client.commandsystem.Arg;
 import kaptainwutax.tungsten.client.commandsystem.CommandException;
 import kaptainwutax.tungsten.client.path.targets.BlockTarget;
 import kaptainwutax.tungsten.client.path.targets.BlockTarget.BlockTargetCoordType;
 import kaptainwutax.tungsten.world.Dimension;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.command.CommandSource;
-import net.minecraft.text.Text;
+import net.minecraft.commands.CommandSource;
+import net.minecraft.network.chat.Component;
 
 public class GotoTargetArgumentType implements ArgumentType<BlockTarget> {
     private static final GotoTargetArgumentType INSTANCE = new GotoTargetArgumentType();
     private static final Collection<String> EXAMPLES = List
 	    .of("[x y z dimension]/[x z dimension]/[y dimension]/[dimension]/[x y z]/[x z]/[y]");
     static final DynamicCommandExceptionType INVALID_NUM_OF_COORD_ARGS = new DynamicCommandExceptionType(
-	    numbers -> Text.literal("Unexpected number of integers passed to coordinate: " + numbers));
+	    numbers -> Component.literal("Unexpected number of integers passed to coordinate: " + numbers));
 
     public GotoTargetArgumentType() {
     }
@@ -98,45 +97,45 @@ public class GotoTargetArgumentType implements ArgumentType<BlockTarget> {
 	return new BlockTarget(x, y, z, dimension, coordType);
     }
 
-    @Override
-    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
-	// [x y z dimension]/[x z dimension]/[y dimension]/[dimension]/[x y z]/[x z]/[y]
-	try {
-	    List<String> suggestions = new ArrayList<String>();
-
-	    String remaining = builder.getRemaining();
-
-	    Pattern pattern = Pattern.compile("^(\\d+ \\d+ \\d+)|(\\d+ \\d+)|(\\d+)", Pattern.CASE_INSENSITIVE);
-	    Matcher matcher = pattern.matcher(remaining);
-	    matcher.find();
-
-	    if (!matcher.hasMatch()) {
-		int x = TungstenMod.mc.player.getBlockX();
-		int y = TungstenMod.mc.player.getBlockY();
-		int z = TungstenMod.mc.player.getBlockZ();
-		suggestions.add(x + " " + y + " " + z);
-		suggestions.add(x + " " + z);
-		suggestions.add(y + "");
-
-		for (String string : List.copyOf(suggestions)) {
-		    for (Dimension dimension : Dimension.values()) {
-			suggestions.add(string + " " + dimension.toString());
-			suggestions.add(dimension.toString());
-		    }
-		}
-	    } else if (matcher.hasMatch()) {
-		String addon = matcher.group();
-		suggestions.add(addon);
-		for (Dimension dimension : Dimension.values()) {
-		    suggestions.add(addon + " " + dimension.toString());
-		}
-	    }
-
-	    return CommandSource.suggestMatching(suggestions, builder);
-	} catch (ConcurrentModificationException e) {
-	    return CommandSource.suggestMatching(new ArrayList<String>(), builder);
-	}
-    }
+//    @Override
+//    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
+//	// [x y z dimension]/[x z dimension]/[y dimension]/[dimension]/[x y z]/[x z]/[y]
+//	try {
+//	    List<String> suggestions = new ArrayList<String>();
+//
+//	    String remaining = builder.getRemaining();
+//
+//	    Pattern pattern = Pattern.compile("^(\\d+ \\d+ \\d+)|(\\d+ \\d+)|(\\d+)", Pattern.CASE_INSENSITIVE);
+//	    Matcher matcher = pattern.matcher(remaining);
+//	    matcher.find();
+//
+//	    if (!matcher.hasMatch()) {
+//			int x = TungstenClient.mc.player.getBlockX();
+//			int y = TungstenClient.mc.player.getBlockY();
+//			int z = TungstenClient.mc.player.getBlockZ();
+//			suggestions.add(x + " " + y + " " + z);
+//			suggestions.add(x + " " + z);
+//			suggestions.add(y + "");
+//
+//			for (String string : List.copyOf(suggestions)) {
+//				for (Dimension dimension : Dimension.values()) {
+//				suggestions.add(string + " " + dimension.toString());
+//				suggestions.add(dimension.toString());
+//				}
+//			}
+//	    } else {
+//			String addon = matcher.group();
+//			suggestions.add(addon);
+//			for (Dimension dimension : Dimension.values()) {
+//				suggestions.add(addon + " " + dimension.toString());
+//			}
+//	    }
+//
+//	    return CommandSource.suggestMatching(suggestions, builder);
+//	} catch (ConcurrentModificationException e) {
+//	    return CommandSource.suggestMatching(new ArrayList<String>(), builder);
+//	}
+//    }
 
     @Override
     public Collection<String> getExamples() {

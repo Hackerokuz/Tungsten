@@ -7,15 +7,15 @@ import kaptainwutax.tungsten.client.path.blockSpaceSearchAssist.BlockNode;
 public class EnterWaterAndSwimMove {
 
 	public static Node generateMove(Node parent, BlockNode nextBlockNode) {
-		if (!parent.agent.touchingWater) {
+		if (!parent.agent.isInWater()) {
 			if (parent.agent.canSprint()) {
 		    	Node sprintJumpMove = SprintJumpMove.generateMove(parent, nextBlockNode);
-		    	if (sprintJumpMove.agent.touchingWater) {
+		    	if (sprintJumpMove.agent.isInWater()) {
                     return SwimmingMove.generateMove(sprintJumpMove, nextBlockNode);
 		    	}
 			} else {
 		    	Node walkMove = WalkToNode.generateMove(parent, nextBlockNode);
-		    	if (walkMove.agent.touchingWater) {
+		    	if (walkMove.agent.isInWater()) {
 		    		Node swimmingMove = SwimmingMove.generateMove(walkMove, nextBlockNode);
 		    		RenderHelper.renderPathSoFar(swimmingMove);
 		    		return swimmingMove;
