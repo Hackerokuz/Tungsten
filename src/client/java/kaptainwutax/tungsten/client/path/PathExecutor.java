@@ -2,6 +2,7 @@ package kaptainwutax.tungsten.client.path;
 
 import kaptainwutax.tungsten.client.Debug;
 import kaptainwutax.tungsten.client.TungstenClient;
+import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.TungstenModRenderContainer;
 import kaptainwutax.tungsten.client.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.client.path.blockSpaceSearchAssist.BlockNode;
@@ -16,6 +17,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
+import java.util.Optional;
 
 public class PathExecutor {
 
@@ -203,17 +205,51 @@ public class PathExecutor {
 				TungstenModRenderContainer.RENDERERS.clear();
 				RenderHelper.clearRenderers();
 				for (int i = this.tick; i < this.path.size(); i++) {
+					if (this.tick+18 < i) break;
 					Node n = this.path.get(i);
-					AgentStatus agentStatus = sim.simulate(n.input == null ? AgentInput.NONE : n.input);
+					AgentStatus agentStatus = sim.simulate(n.input);
 
-					if (!n.agentStatus.position.equals(agentStatus.position) || !n.agentStatus.velocity.equals(agentStatus.velocity)) {
+					if (!n.agentStatus.position.closerThan(agentStatus.position, 0.25)) {
 						RenderHelper.renderNode(n);
 						TungstenModRenderContainer.RENDERERS.add(new Cuboid(agentStatus.position.subtract(0.01, 0, 0.01), new Vec3(0.02D, 0.2D, 0.02D), Color.RED));
 						Debug.logMessage(n.agentStatus.diff(agentStatus) + "");
-//						stop = true;
-					}
+						stop = true;
+
+						Thread thread = new Thread(() -> {
+
+							try {
+								Thread.sleep(100);
+							} catch (InterruptedException e) {
+//                            throw new RuntimeException(e);
+							}
+							options.keyUp.setDown(true);
+							try {
+								Thread.sleep(70);
+							} catch (InterruptedException e) {
+//                            throw new RuntimeException(e);
+							}
+							options.keyUp.setDown(false);
+							try {
+								Thread.sleep(600);
+							} catch (InterruptedException e) {
+//                            throw new RuntimeException(e);
+							}
+
+							while (!this.blockPath.getFirst().getPos().closerThan(TungstenModDataContainer.player.position(),5)) {
+								this.blockPath.removeFirst();
+							}
+							TungstenModDataContainer.PATHFINDER.find(TungstenModDataContainer.world, TungstenClient.TARGET, TungstenModDataContainer.player, Optional.of(this.blockPath));
+
+						});
+						thread.setName("PathFinderStarter");
+						thread.setPriority(4);
+						thread.start();
+						break;
+
+                    }
 
 				}
+
 
 		    }
 //		    if(this.tick != 0 && options != null) {

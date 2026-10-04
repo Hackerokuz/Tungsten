@@ -70,6 +70,8 @@ public final class AgentSimulator {
         entity.getAttributes().assignBaseValues(player.getAttributes());
         entity.setXRot(player.getXRot());
         entity.setOnGround(player.onGround());
+        entity.getFoodData().setFoodLevel(player.getFoodData().getFoodLevel());
+        entity.getFoodData().setSaturation(player.getFoodData().getSaturationLevel());
         entity.horizontalCollision = player.horizontalCollision;
         entity.minorHorizontalCollision = player.minorHorizontalCollision;
         entity.setSprinting(player.isSprinting());

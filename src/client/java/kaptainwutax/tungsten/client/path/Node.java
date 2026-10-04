@@ -61,8 +61,8 @@ public class Node {
 			this.sim = parent.sim.copy();
 		}
 		this.input = AgentInput.NONE;
-		this.agent = this.sim.getAgent();
 		this.agentStatus = sim.simulate(input);
+		this.agent = this.sim.getAgent();
     }
 
 	public Node(@NotNull Node parent, @NotNull Level world, @NotNull AgentInput input, @NotNull kaptainwutax.tungsten.client.render.Color color, double pathCost) {

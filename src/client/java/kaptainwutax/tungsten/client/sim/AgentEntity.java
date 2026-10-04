@@ -132,6 +132,8 @@ public class AgentEntity extends Player {
         clone.minorHorizontalCollision = s.softCollision;
         clone.setSprinting(s.sprinting);
         clone.setSwimming(s.swimming);
+        clone.getFoodData().setFoodLevel(src.getFoodData().getFoodLevel());
+        clone.getFoodData().setSaturation(src.getFoodData().getSaturationLevel());
         return clone;
     }
 
