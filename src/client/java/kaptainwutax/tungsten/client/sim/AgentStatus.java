@@ -394,7 +394,7 @@ public final class AgentStatus {
             this.changedBooleans = List.copyOf(bools);
 
             List<String> ints = new ArrayList<>();
-            if (from.sprintTriggerTime != to.sprintTriggerTime) ints.add("sprintTriggerTime");
+            if (from.sprintTriggerTime != to.sprintTriggerTime) ints.add("sprintTriggerTime from " + from.sprintTriggerTime + " to " + to.sprintTriggerTime);
             if (from.jumpCooldown != to.jumpCooldown)           ints.add("jumpCooldown");
             if (from.foodLevel != to.foodLevel)                 ints.add("foodLevel");
             if (from.airSupply != to.airSupply)                 ints.add("airSupply");

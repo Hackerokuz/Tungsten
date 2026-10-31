@@ -8,6 +8,7 @@ import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.helpers.DirectionHelper;
 import kaptainwutax.tungsten.client.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.client.helpers.NodeCostCalculator;
+import kaptainwutax.tungsten.client.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.client.path.Node;
 import kaptainwutax.tungsten.client.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.client.render.Color;
@@ -72,9 +73,9 @@ public class NeoJump {
 //			}
             newNode = new Node(newNode, world, new AgentInput(true, false, false, false, false, false, true, agent.getXRot(),
             		(neoRotation == 270 || neoRotation == 90) ?
-            			nudgeRotation(jumpTowardsRotation, distance < 2 ? 65 : 35)
+            			nudgeRotation(jumpTowardsRotation, distance < 2 ? -65 : -35)
         			:
-        				nudgeRotation(jumpTowardsRotation, distance < 2 ? -65 : -35)
+        				nudgeRotation(jumpTowardsRotation, distance < 2 ? 65 : 35)
 
             		),
             		new Color(0, 255, 150), newNode.cost);

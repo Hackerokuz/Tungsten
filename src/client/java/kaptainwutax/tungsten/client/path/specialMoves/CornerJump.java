@@ -44,9 +44,9 @@ public class CornerJump {
         int limit = 0;
         desiredYaw += reverse ? -90f : 90f;
         while (limit < 18 && !jump && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-2) {
-            AABB adjustedBox = newNode.agent.getBoundingBox().move(0, -0.5, 0).inflate(-0.04, 0, -0.04);
+//            AABB adjustedBox = newNode.agent.getBoundingBox().move(0, -0.5, 0).inflate(-0.04, 0, -0.04);
         	limit++;
-        	Stream<VoxelShape> blockCollisions = Streams.stream(newNode.agent.getBlockCollisions(TungstenModDataContainer.world, adjustedBox));
+//        	Stream<VoxelShape> blockCollisions = Streams.stream(newNode.agent.getBlockCollisions(TungstenModDataContainer.world, adjustedBox));
 //        	RenderHelper.renderNode(newNode, TungstenMod.TEST);
 //            try {
 //				Thread.sleep(50);
@@ -54,10 +54,10 @@ public class CornerJump {
 //				// TODO Auto-generated catch block
 //				e.printStackTrace();
 //			}
-            if (blockCollisions.findAny().isEmpty() || newNode.agent.horizontalCollision || limit > 10) {
-        		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(newNode.agent.getPos(), nextBlockNode.getPos(true));
-        		jump = true;
-        	}
+//            if (blockCollisions.findAny().isEmpty() || newNode.agent.horizontalCollision || limit > 10) {
+//        		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(newNode.agent.getPos(), nextBlockNode.getPos(true));
+//        		jump = true;
+//        	}
 
             newNode = new Node(newNode, world, new AgentInput(true, false, false, false, jump, false, true, agent.getXRot(), desiredYaw),
             		new Color(0, 255, 150), newNode.cost);

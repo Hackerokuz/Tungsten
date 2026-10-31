@@ -20,9 +20,9 @@ public class SwimmingMove {
 		float desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
 		float desiredPitch = (float) DirectionHelper.calcPitchFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
 		double distance = DistanceCalculator.getHorizontalEuclideanDistance(agent.getPos(), nextBlockNode.getPos(true));
-	    Node newNode = new Node(parent, world, new AgentInput(true, false, false, true, false, false, true, -30f, desiredYaw + 45),
+	    Node newNode = new Node(parent, world, new AgentInput(true, false, false, true, false, false, true, -30f, desiredYaw - 45),
 	    				new Color(0, 255, 150), parent.cost);
-		NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+		NodeCostCalculator.accumulateCost(world, newNode);
 		newNode.combinedCost = newNode.combinedCost * 0.0004;
 		int limit = 0;
 		double closestDistance = Double.MAX_VALUE;
@@ -38,23 +38,23 @@ public class SwimmingMove {
 		RenderHelper.clearRenderers();
 		while (i < 28 && distance > 0.2 && !newNode.agent.horizontalCollision && newNode.agent.getY() >= world.getMinY()) {
 			if (newNode.agent.isUnderWater()) {
-				newNode = new Node(newNode, world, new AgentInput(true, false, false, true, i % 20 == 0, false, true, -30f, desiredYaw + 45f),
+				newNode = new Node(newNode, world, new AgentInput(true, false, false, true, i % 20 == 0, false, true, -30f, desiredYaw - 45f),
 						new Color(0, 255, 150), newNode.cost);
-				NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+				NodeCostCalculator.accumulateCost(world, newNode);
 				newNode.combinedCost = newNode.combinedCost * 0.0004;
 			} else {
-				newNode = new Node(newNode, world, new AgentInput(true, false, false, true, newNode.agent.getPos().y > newNode.agent.getEyeY() + 0.1 , false, true, -30f, desiredYaw + 45f),
+				newNode = new Node(newNode, world, new AgentInput(true, false, false, true, newNode.agent.getPos().y > newNode.agent.getEyeY() + 0.1 , false, true, -30f, desiredYaw - 45f),
 						new Color(0, 255, 150), newNode.cost);
-				NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+				NodeCostCalculator.accumulateCost(world, newNode);
 				newNode.combinedCost = newNode.combinedCost * 0.0004;
 				if (newNode.agent.getDeltaMovement().y() > 0.045) {
-					newNode = new Node(newNode, world, new AgentInput(true, false, false, true, false, true, true, -30f, desiredYaw + 45f),
+					newNode = new Node(newNode, world, new AgentInput(true, false, false, true, false, true, true, -30f, desiredYaw - 45f),
 							new Color(0, 255, 150), newNode.cost);
-					NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+					NodeCostCalculator.accumulateCost(world, newNode);
 					newNode.combinedCost = newNode.combinedCost * 0.0004;
-					newNode = new Node(newNode, world, new AgentInput(true, false, false, true, false, true, true, -30f, desiredYaw + 45f),
+					newNode = new Node(newNode, world, new AgentInput(true, false, false, true, false, true, true, -30f, desiredYaw - 45f),
 							new Color(0, 255, 150), newNode.cost);
-					NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+					NodeCostCalculator.accumulateCost(world, newNode);
 					newNode.combinedCost = newNode.combinedCost * 0.0004;
                 }
 			}

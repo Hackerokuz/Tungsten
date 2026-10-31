@@ -29,6 +29,7 @@ import kaptainwutax.tungsten.client.sim.AgentInput;
 import kaptainwutax.tungsten.client.sim.AgentSimulator;
 import kaptainwutax.tungsten.client.sim.AgentStatus;
 import net.minecraft.core.Direction;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.IceBlock;
 import net.minecraft.world.level.block.LadderBlock;
@@ -42,32 +43,40 @@ public class Node {
 	public @NotNull AgentEntity agent;
 	public @NotNull AgentStatus agentStatus;
 	public @NotNull AgentInput input;
+	public final double inheritedCost;
+	public final boolean fallDamage;
 	public double cost;
 	public double estimatedCostToGoal = 0;
 	public int heapPosition;
 	public double combinedCost;
 	public kaptainwutax.tungsten.client.render.Color color;
-	public @NotNull AgentSimulator sim;
 
 	public Node(Node parent, @NotNull AgentEntity agent, @NotNull kaptainwutax.tungsten.client.render.Color color, double pathCost) {
 		this.parent = parent;
+		this.inheritedCost = pathCost;
 		this.color = color;
 		this.cost = pathCost;
 		this.combinedCost = 0;
 		this.heapPosition = -1;
-		if (parent == null) {
-			this.sim = new AgentSimulator(AgentEntity.cloneFrom(agent, agent.snapshot()));
-		} else {
-			this.sim = parent.sim.copy();
-		}
+		AgentSimulator sim = TungstenModDataContainer.PATHFINDER.getSimCopyForAllOf(parent);
 		this.input = AgentInput.NONE;
-		this.agentStatus = sim.simulate(input);
-		this.agent = this.sim.getAgent();
+		this.agentStatus = sim.simulate(AgentInput.NONE);
+		this.agent = sim.getAgent();
+		this.fallDamage = checkForFallDamage(this, TungstenModDataContainer.world);
+//		TungstenModRenderContainer.RENDERERS.clear();
+//		RenderHelper.renderNode(this);
+//		try {
+//			Thread.sleep(25);
+//		} catch (InterruptedException e) {
+////            throw new RuntimeException(e);
+//		}
     }
 
 	public Node(@NotNull Node parent, @NotNull Level world, @NotNull AgentInput input, @NotNull kaptainwutax.tungsten.client.render.Color color, double pathCost) {
 		this.parent = parent;
-		this.sim = parent.sim.copy();
+		this.inheritedCost = pathCost;
+		AgentSimulator sim = new AgentSimulator(AgentEntity.cloneFrom(parent.agent, parent.agentStatus));
+//		AgentSimulator sim = TungstenModDataContainer.PATHFINDER.getSimCopyForAllOf(parent);
 //		Node node = parent;
 //		List<Node> path = new ArrayList<>();
 //		while (node.parent != null) {
@@ -84,10 +93,10 @@ public class Node {
 //			if (!n.agentStatus.position.closerThan(agentStatus.position, 0.41)) {
 //				n.agent = sim.getAgent();
 //				n.agentStatus = agentStatus;
-//				RenderHelper.renderNode(n);
-//				TungstenModRenderContainer.ERROR.add(new Cuboid(agentStatus.position.subtract(0.01, 0, 0.01), new Vec3(0.02D, 0.06D, 0.02D), Color.WHITE));
+//				RenderHelper.renderNode(this);
+////				TungstenModRenderContainer.ERROR.add(new Cuboid(agentStatus.position.subtract(0.01, 0, 0.01), new Vec3(0.02D, 0.06D, 0.02D), Color.WHITE));
 //				try {
-//					Thread.sleep(15);
+//					Thread.sleep(150);
 //				} catch (InterruptedException e) {
 ////            throw new RuntimeException(e);
 //				}
@@ -103,6 +112,30 @@ public class Node {
 		this.cost = pathCost;
 		this.combinedCost = 0;
 		this.heapPosition = -1;
+		this.fallDamage = checkForFallDamage(this, world);
+//		TungstenModRenderContainer.RENDERERS.clear();
+//		RenderHelper.renderNode(this);
+//		try {
+//			Thread.sleep(25);
+//		} catch (InterruptedException e) {
+////            throw new RuntimeException(e);
+//		}
+	}
+
+	public Node(@NotNull Node parent, @NotNull Level world, @NotNull List<AgentInput> inputs, @NotNull kaptainwutax.tungsten.client.render.Color color, double pathCost) {
+		this.parent = parent;
+		AgentSimulator sim = new AgentSimulator(AgentEntity.cloneFrom(parent.agent, parent.agentStatus));
+//		AgentSimulator sim = TungstenModDataContainer.PATHFINDER.getSimCopyForAllOf(parent);
+
+		this.agentStatus = sim.simulate(inputs).getFirst();
+		this.agent = sim.getAgent();
+		this.input = inputs.getLast();
+		this.color = color;
+		this.inheritedCost = pathCost;
+		this.cost = pathCost;
+		this.combinedCost = 0;
+		this.heapPosition = -1;
+		this.fallDamage = checkForFallDamage(this, world);
 	}
 	
 	 public boolean isOpen() {
@@ -152,6 +185,29 @@ public class Node {
 		double distance = DistanceCalculator.getEuclideanDistance(this.agent.position(), nextBlockNode.getPos(true));
 
 	    List<Node> nodes = new ArrayList<>();
+
+		if (this.agent.onGround() && this.agent.position().distanceTo(target) < 0.3) {
+			Node n = new Node(this, world, new AgentInput(false, false, false, false, false, true, false, this.agent.getXRot(), this.agent.getYRot() * -1), Color.RED, cost);
+
+			NodeCostCalculator.accumulateCost(world, n);
+			Node n2= new Node(n, world, new AgentInput(false, false, false, false, false, true, false, n.agent.getXRot(), n.agent.getYRot()), Color.RED, n.cost);
+
+			NodeCostCalculator.accumulateCost(world, n2);
+			nodes.add(n2);
+			return nodes;
+		}
+
+		if (this.agent.onGround() && this.agent.position().distanceTo(nextBlockNode.getPos(true)) > 5 && MovementHelper.wasCleared(world, this.agent.blockPosition(), nextBlockNode.getBlockPos())) {
+			if (!agent.isInWater() && this.agent.canSprint()) {
+				if (agent.hasEffect(MobEffects.SPEED)) {
+					nodes.add(RunToNode.generateMove(this, nextBlockNode));
+					return nodes;
+				}
+				Node sprintJumpMove = SprintJumpMove.generateMove(this, nextBlockNode);
+				nodes.add(sprintJumpMove);
+				return nodes;
+			}
+		}
 
 
 //	    if (!agent.isClimbing(world) && nextBlockNode.getBlockState(world).getBlock() instanceof LadderBlock) {
@@ -238,9 +294,9 @@ public class Node {
 	    	nodes.add(WalkToNode.generateMove(this, nextBlockNode));
 	    }
 
-	    if (!agent.isInWater() && this.agent.canSprint() && distance < 14) {
-	    	nodes.add(RunToNode.generateMove(this, nextBlockNode));
-	    }
+//	    if (!agent.isInWater() && this.agent.canSprint() && distance < 14) {
+//	    	nodes.add(RunToNode.generateMove(this, nextBlockNode));
+//	    }
     	if (agent.onGround() && !agent.onClimbable() && world.getBlockState(agent.blockPosition().below()).getBlock() instanceof LadderBlock) {
 	    	nodes.add(LongJump.generateMove(this, nextBlockNode));
 //    		nodes.add(CornerJump.generateMove(this, nextBlockNode));
@@ -290,9 +346,10 @@ public class Node {
 		// 1) Collect parameter combinations (cheap — no physics)
 		List<ChildGenParams> params = new ArrayList<>();
 	    float desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.position(), nextBlockNode.getPos(true));
-	    float a = 134.4f;
-	    float fromYaw = -180.0f;
-	    float toYaw = 180f;
+		boolean narrowSweep = agent.onGround() && agent.position().distanceTo(nextBlockNode.getPos(true)) < 0.85;
+		float a = narrowSweep ? 45.0f : 134.4f;
+		float fromYaw = Math.max(desiredYaw - a, -180.0f);
+		float toYaw = Math.min(desiredYaw + a, 180.0f);
 //	    for (boolean forward : new boolean[]{true, false}) {
 //	        for (boolean right : new boolean[]{true, false}) {
 //	            for (boolean left : new boolean[]{true, false}) {
@@ -329,7 +386,7 @@ public class Node {
             if (jump && sneak) return null;
 	        Node newNode = new Node(this, world, new AgentInput(forward, false, right, left, jump, sneak, sprint, agent.getXRot(), yaw),
 	                new kaptainwutax.tungsten.client.render.Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost);
-			NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+			NodeCostCalculator.accumulateCost(world, newNode);
 	        if (newNode.agent.position().closerThan(nextBlockNode.getPos(true), 0.1, 0.4)) return null;
 //	        double newNodeDistanceToBlockNode = Math.ceil(newNode.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
 //	        double parentNodeDistanceToBlockNode = Math.ceil(newNode.parent.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
@@ -358,8 +415,8 @@ public class Node {
 //					Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(world, adjustedBox));
 //					if (blockCollisions.findAny().isEmpty() && isDoingLongJump) jump = true;
 					newNode = new Node(newNode, world, new AgentInput(forward, false, right, left, jump, sneak, sprint, agent.getXRot(), yaw),
-							jump ? new kaptainwutax.tungsten.client.render.Color(150, 55, 85) : new kaptainwutax.tungsten.client.render.Color(0, 255, sneak ? 50 : 0), this.cost);
-					NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+							jump ? new kaptainwutax.tungsten.client.render.Color(150, 55, 85) : new kaptainwutax.tungsten.client.render.Color(0, 255, sneak ? 50 : 0), newNode.cost);
+					NodeCostCalculator.accumulateCost(world, newNode);
 					if (!isDoingLongJump && jump && j > 1) break;
 					if (!newNode.agent.onGround() && !newNode.agent.onClimbable()) break;
 				}
@@ -379,7 +436,7 @@ public class Node {
 //	        for (float yaw = agent.yaw - 45; yaw < 180.0f; yaw += 22.5 + Math.random()) {
 //	            for (boolean forward : new boolean[]{true, false}) {
 //	                for (boolean right : new boolean[]{false, true}) {
-	                    createAirborneNodes(world, nextBlockNode, nodes, true, false, agent.getXRot());
+	                    createAirborneNodes(world, nextBlockNode, nodes, true, false, agent.getYRot());
 //	                }
 //	            }
 //	        }
@@ -391,9 +448,10 @@ public class Node {
 	}
 
 	private void createAirborneNodes(Level world, BlockNode nextBlockNode, List<Node> nodes, boolean forward, boolean right, float yaw) {
-	    Node newNode = new Node(this, world, new AgentInput(forward, false, right, false, false, false, true, agent.getXRot(), yaw),
+	    Node newNode = new Node(this, world, new AgentInput(forward, false, right, false, this.agent.onGround(), false, true, agent.getXRot(), yaw),
 	            new kaptainwutax.tungsten.client.render.Color(0, 255, 255), this.cost);
-		NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+
+		NodeCostCalculator.accumulateCost(world, newNode);
 
         
 //        if (newNode.agent.getPos().isWithinRangeOf(nextBlockNode.getPos(true), 0.9, 0.4)) return;
@@ -412,11 +470,11 @@ public class Node {
 	    	i++;
 	        newNode = new Node(newNode, world, new AgentInput(forward, false, right, false, false, false, true, agent.getXRot(), yaw),
 	                new kaptainwutax.tungsten.client.render.Color(0, 255, 255), this.cost);
-			NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+			NodeCostCalculator.accumulateCost(world, newNode);
 	    }
         newNode = new Node(newNode, world, new AgentInput(forward, false, right, false, false, false, true, agent.getXRot(), yaw),
                 new kaptainwutax.tungsten.client.render.Color(0, 255, 255), this.cost);
-		NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+		NodeCostCalculator.accumulateCost(world, newNode);
 
 //        if (newNode.agent.getPos().distanceTo(this.agent.getPos()) < 1.05) return;
 	    nodes.add(newNode);
@@ -429,5 +487,17 @@ public class Node {
 	        double diff2 = Math.abs(n2.agent.getXRot() - desiredYaw);
 	        return Double.compare(diff1, diff2);
 	    });
+	}
+
+
+
+	private boolean checkForFallDamage(Node n, Level world) {
+		if (TungstenModDataContainer.PATHFINDER.stop.get()) return false;
+		if (TungstenModDataContainer.ignoreFallDamage) return false;
+		if (n.parent == null) return false;
+		if (n.parent.fallDamage) return true;                                   // inherited
+		if (n.agent.hurtMarked || n.parent.agent.hurtMarked) return true;
+		if (n.agent.onGround() || n.agent.isInWater()) return false;             // landed safely
+		return DistanceCalculator.getJumpHeight(n.parent.agent.getPos().y, n.agent.getPos().y) < -3;
 	}
 }

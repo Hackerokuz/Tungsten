@@ -27,7 +27,7 @@ public class LongJump {
 		double distance = DistanceCalculator.getHorizontalEuclideanDistance(agent.getPos(), nextBlockNode.getPos(true));
 	    Node newNode = new Node(parent, world, new AgentInput(false, false, false, false, false, false, false, agent.getXRot(), desiredYaw),
 	    				new Color(0, 255, 150), parent.cost);
-		NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+		NodeCostCalculator.accumulateCost(world, newNode);
 	    // Go back if we are too close to the edge to jump
 	    if (distance > 4 && DistanceCalculator.getDistanceToEdge(newNode.agent) < 0.8 && AgentChecker.isAgentStationary(newNode.agent, 0.07)) {
 	        for (int j = 0; j < 6; j++) {
@@ -38,7 +38,7 @@ public class LongJump {
 	        	desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
 	            newNode = new Node(newNode, world, new AgentInput(false, true, false, false, false, false, false, agent.getXRot(), desiredYaw),
 	            		new Color(0, 255, 150), newNode.cost);
-				NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+				NodeCostCalculator.accumulateCost(world, newNode);
 	        }
 	    }
         
@@ -63,7 +63,7 @@ public class LongJump {
 	    		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
 	            newNode = new Node(newNode, world, new AgentInput(true, false, false, false, jump, false, true, agent.getXRot(), desiredYaw),
 	            		new Color(0, 255, 150), newNode.cost);
-				NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+				NodeCostCalculator.accumulateCost(world, newNode);
 	        }
 	        limit = 0;
     		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
@@ -71,12 +71,12 @@ public class LongJump {
 	        	if (newNode.agent.horizontalCollision) break;
 	            newNode = new Node(newNode, world, new AgentInput(true, false, false, false, false, false, false, agent.getXRot(), desiredYaw),
 	            		new Color(distance < 0.4 ? 180 : 0, 255, 150), newNode.cost);
-				NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+				NodeCostCalculator.accumulateCost(world, newNode);
 	        	limit++;
 	        }
             newNode = new Node(newNode, world, new AgentInput(true, false, false, false, false, false, false, agent.getXRot(), desiredYaw),
             		new Color(distance < 0.4 ? 180 : 0, 255, 150), newNode.cost);
-			NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+			NodeCostCalculator.accumulateCost(world, newNode);
 		} else {
 			limit = 0;
 	        // Run forward to the node
@@ -86,7 +86,8 @@ public class LongJump {
 	    		distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
 	            newNode = new Node(newNode, world, new AgentInput(true, false, false, false, jump, false, false, agent.getXRot(), desiredYaw),
 	            		new Color(0, 255, 150), newNode.cost);
-				NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
+
+				NodeCostCalculator.accumulateCost(world, newNode);
 	        }
 		}
             

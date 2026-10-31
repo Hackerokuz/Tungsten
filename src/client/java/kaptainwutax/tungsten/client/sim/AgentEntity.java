@@ -1,6 +1,7 @@
 package kaptainwutax.tungsten.client.sim;
 
 import com.mojang.authlib.GameProfile;
+import kaptainwutax.tungsten.client.Debug;
 import kaptainwutax.tungsten.client.helpers.MathHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -134,6 +135,15 @@ public class AgentEntity extends Player {
         clone.setSwimming(s.swimming);
         clone.getFoodData().setFoodLevel(src.getFoodData().getFoodLevel());
         clone.getFoodData().setSaturation(src.getFoodData().getSaturationLevel());
+        clone.tickGroundFriction = src.tickGroundFriction;
+        clone.setDeltaMovement(src.getDeltaMovement());
+        clone.hurtMarked = src.hurtMarked;
+        clone.hurtDuration = src.hurtDuration;
+        clone.hurtTime = src.hurtTime;
+        clone.hurtDir = src.hurtDir;
+        for (MobEffectInstance activeEffect : src.getActiveEffects()) {
+            clone.addEffect(activeEffect);
+        }
         return clone;
     }
 
@@ -159,7 +169,6 @@ public class AgentEntity extends Player {
         this.setRot(startYaw, 0);
         this.input.setCurrent(AgentInput.NONE);
         this.sprintTriggerTime = 0;
-        this.tick();
         this.tick();
         this.setPos(startPosition);
         this.setDeltaMovement(startVelocity);
@@ -336,13 +345,13 @@ public class AgentEntity extends Player {
         }
 
         if (this.canStartSprinting()) {
-            if (!hasForwardImpulse) {
-                if (this.sprintTriggerTime > 0) {
-                    this.setSprinting(true);
-                } else {
-                    this.sprintTriggerTime = 7;   // vanilla sprint window
-                }
-            }
+//            if (!hasForwardImpulse) {
+//                if (this.sprintTriggerTime > 0) {
+//                    this.setSprinting(true);
+//                } else {
+//                    this.sprintTriggerTime = 7;   // vanilla sprint window
+//                }
+//            }
             if (this.input.keyPresses.sprint()) {
                 this.setSprinting(true);
             }

@@ -1,5 +1,6 @@
 package kaptainwutax.tungsten.client.helpers;
 
+import kaptainwutax.tungsten.client.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.client.sim.AgentEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
@@ -141,5 +142,51 @@ public class DistanceCalculator {
 			return diff > 0 ? diff : diff * -1;
 		}
 		return diff > 0 ? diff * -1 : diff;
+	}
+
+	static double distanceFromPointToLine(
+			BlockNode A,
+			BlockNode B,
+			Vec3 C) {
+		return distanceFromPointToLine(A.getPos(true), B.getPos(true), C);
+	}
+
+	static double distanceFromPointToLine(
+			Vec3 A,
+			Vec3 B,
+			Vec3 C) {
+		return distanceFromPointToLine(A.x(), A.y(), A.z(), B.x(), B.y(), B.z(), C.x, C.y, C.z);
+	}
+
+	static double distanceFromPointToLine(
+			BlockPos A,
+			BlockPos B,
+			Vec3 C) {
+		return distanceFromPointToLine(A.getX(), A.getY(), A.getZ(), B.getX(), B.getY(), B.getZ(), C.x, C.y, C.z);
+	}
+
+	static double distanceFromPointToLine(
+			double ax, double ay, double az,
+			double bx, double by, double bz,
+			double cx, double cy, double cz) {
+		double abx = bx - ax;
+		double aby = by - ay;
+		double abz = bz - az;
+
+		double acx = cx - ax;
+		double acy = cy - ay;
+		double acz = cz - az;
+
+		double crossX = aby * acz - abz * acy;
+		double crossY = abz * acx - abx * acz;
+		double crossZ = abx * acy - aby * acx;
+
+		double abLength = Math.sqrt(abx * abx + aby * aby + abz * abz);
+		if (abLength == 0.0) {
+//			throw new IllegalArgumentException("A and B must be distinct points");
+			return 0;
+		}
+
+		return Math.sqrt(crossX * crossX + crossY * crossY + crossZ * crossZ) / abLength;
 	}
 }

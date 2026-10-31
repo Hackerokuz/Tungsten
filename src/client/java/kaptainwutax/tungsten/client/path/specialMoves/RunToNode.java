@@ -23,7 +23,7 @@ public class RunToNode {
 		double distance = DistanceCalculator.getHorizontalEuclideanDistance(agent.getPos(), nextBlockNode.getPos(true));
 		double closestDistance = Double.MAX_VALUE;
 	    Node newNode = new Node(parent, world, new AgentInput(false, false, false, false, false, false, true, agent.getXRot(), desiredYaw),
-	    				new Color(0, 255, 150), parent.cost);
+				new Color(24, 17, 222), parent.cost);
 		NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
 	    Node lastHigheastNodeSinceGround = null;
 	    boolean jump = false;

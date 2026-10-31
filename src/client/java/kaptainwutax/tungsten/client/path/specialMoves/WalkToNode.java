@@ -31,7 +31,7 @@ public class WalkToNode {
         int limit = 0;
         while (limit < 200 && newNode.agent.getY() >= world.getMinY()) {
 			if (newNode.agent.isInWater()) {
-				newNode.cost += 0.2;
+				newNode.cost += 0.002;
 				break;
 			}
 			if (agent.isInLava()) newNode.cost = 2e6;

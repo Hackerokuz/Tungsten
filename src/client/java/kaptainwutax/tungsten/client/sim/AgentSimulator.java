@@ -1,5 +1,6 @@
 package kaptainwutax.tungsten.client.sim;
 
+import kaptainwutax.tungsten.client.Debug;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.server.MinecraftServer;
@@ -67,8 +68,10 @@ public final class AgentSimulator {
         Vec3 vel = startVelocity != null ? startVelocity : Vec3.ZERO;
         AgentEntity entity = new AgentEntity(simWorld, player.getGameProfile(), start, vel, player.getXRot());
         // Copy attribute base values so movement-speed buffs / sprint modifiers are honest.
+        entity.noPhysics = player.noPhysics;
         entity.getAttributes().assignBaseValues(player.getAttributes());
         entity.setXRot(player.getXRot());
+        entity.setYRot(player.getYRot());
         entity.setOnGround(player.onGround());
         entity.getFoodData().setFoodLevel(player.getFoodData().getFoodLevel());
         entity.getFoodData().setSaturation(player.getFoodData().getSaturationLevel());
@@ -76,6 +79,9 @@ public final class AgentSimulator {
         entity.minorHorizontalCollision = player.minorHorizontalCollision;
         entity.setSprinting(player.isSprinting());
         entity.setSwimming(player.isSwimming());
+        for (MobEffectInstance activeEffect : player.getActiveEffects()) {
+            entity.addEffect(activeEffect);
+        }
         return new AgentSimulator(entity);
     }
 
@@ -115,6 +121,9 @@ public final class AgentSimulator {
         clone.minorHorizontalCollision = src.minorHorizontalCollision;
         clone.setSprinting(src.isSprinting());
         clone.setSwimming(src.isSwimming());
+        for (MobEffectInstance activeEffect : src.getActiveEffects()) {
+            clone.addEffect(activeEffect);
+        }
         // Config
         clone.setKinematic(src.isKinematic());
         // new AgentEntity already calls resetPlayer() in its ctor, which seeds the

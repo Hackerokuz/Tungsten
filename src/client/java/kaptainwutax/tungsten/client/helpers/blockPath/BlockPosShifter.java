@@ -1,10 +1,13 @@
 package kaptainwutax.tungsten.client.helpers.blockPath;
 
+import kaptainwutax.tungsten.client.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.client.path.blockSpaceSearchAssist.BlockNode;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LadderBlock;
+import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 
 public class BlockPosShifter {
@@ -20,6 +23,9 @@ public class BlockPosShifter {
 		BlockState blockBelowState = world.getBlockState(blockNode.getBlockPos().below());
 		Vec3 currPos = blockNode.getPos().add(0.5, 0, 0.5);
 		if (!(blockState.getBlock() instanceof LadderBlock) && !(blockBelowState.getBlock() instanceof LadderBlock)) {
+			if (blockBelowState.getBlock() instanceof SlabBlock && BlockStateChecker.isBottomSlab(blockBelowState)) {
+				return currPos.subtract(0, 0.5, 0);
+			}
 			return currPos;
 		}
 		

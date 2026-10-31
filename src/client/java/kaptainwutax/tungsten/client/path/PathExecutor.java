@@ -47,6 +47,18 @@ public class PathExecutor {
 		if (isClient)
 			this.allowedFlying = TungstenClient.mc.player.getAbilities().flying;
 	    stop = false;
+
+//		AgentSimulator sim = AgentSimulator.fromLocalPlayer(TungstenModDataContainer.player, TungstenModDataContainer.player.getDeltaMovement());
+//		Node lastN = null;
+//		for (int i = 0; i < path.size(); i++) {
+//			Node n = path.get(i);
+//            n.agentStatus = sim.simulate(n.input);
+//			n.agent = sim.getAgent();
+//			n.parent = lastN;
+//			lastN = n;
+//			path.set(i, n);
+//		}
+
     	this.path = path;
     	this.tick = 0;
     	RenderHelper.renderPathCurrentlyExecuted();
@@ -189,69 +201,18 @@ public class PathExecutor {
 	    } else {
 		    Node node = this.path.get(this.tick);
 
-		    if(node.input != null) {
-//			    if (player.isCreative()) player.stopGliding();
-	    		options.keyUp.setDown(node.input.forward);
-			    options.keyDown.setDown(node.input.back);
-			    options.keyLeft.setDown(node.input.left);
-			    options.keyRight.setDown(node.input.right);
-			    options.keyJump.setDown(node.input.jump);
-			    options.keyShift.setDown(node.input.sneak);
-			    options.keySprint.setDown(node.input.sprint);
-				player.setXRot(node.input.pitch);
-				player.setYRot(node.input.yaw);
-
-				AgentSimulator sim = AgentSimulator.fromLocalPlayer(player, player.getDeltaMovement());
-				TungstenModRenderContainer.RENDERERS.clear();
-				RenderHelper.clearRenderers();
-				for (int i = this.tick; i < this.path.size(); i++) {
-					if (this.tick+18 < i) break;
-					Node n = this.path.get(i);
-					AgentStatus agentStatus = sim.simulate(n.input);
-
-					if (!n.agentStatus.position.closerThan(agentStatus.position, 0.25)) {
-						RenderHelper.renderNode(n);
-						TungstenModRenderContainer.RENDERERS.add(new Cuboid(agentStatus.position.subtract(0.01, 0, 0.01), new Vec3(0.02D, 0.2D, 0.02D), Color.RED));
-						Debug.logMessage(n.agentStatus.diff(agentStatus) + "");
-						stop = true;
-
-						Thread thread = new Thread(() -> {
-
-							try {
-								Thread.sleep(100);
-							} catch (InterruptedException e) {
-//                            throw new RuntimeException(e);
-							}
-							options.keyUp.setDown(true);
-							try {
-								Thread.sleep(70);
-							} catch (InterruptedException e) {
-//                            throw new RuntimeException(e);
-							}
-							options.keyUp.setDown(false);
-							try {
-								Thread.sleep(600);
-							} catch (InterruptedException e) {
-//                            throw new RuntimeException(e);
-							}
-
-							while (!this.blockPath.getFirst().getPos().closerThan(TungstenModDataContainer.player.position(),5)) {
-								this.blockPath.removeFirst();
-							}
-							TungstenModDataContainer.PATHFINDER.find(TungstenModDataContainer.world, TungstenClient.TARGET, TungstenModDataContainer.player, Optional.of(this.blockPath));
-
-						});
-						thread.setName("PathFinderStarter");
-						thread.setPriority(4);
-						thread.start();
-						break;
-
-                    }
-
-				}
+	    		options.keyUp.setDown(node.agent.input.keyPresses.forward());
+			    options.keyDown.setDown(node.agent.input.keyPresses.backward());
+			    options.keyLeft.setDown(node.agent.input.keyPresses.left());
+			    options.keyRight.setDown(node.agent.input.keyPresses.right());
+			    options.keyJump.setDown(node.agent.input.keyPresses.jump());
+			    options.keyShift.setDown(node.agent.input.keyPresses.shift());
+			    options.keySprint.setDown(node.agent.input.keyPresses.sprint());
+				player.setSprinting(node.agent.isSprinting());
+				player.setXRot(node.agent.getXRot());
+				player.setYRot(node.agent.getYRot());
 
 
-		    }
 //		    if(this.tick != 0 && options != null) {
 //			    this.path.get(this.tick - 1).agent.compare(player, optionsToPlayerInput(options), true);
 //		    }
@@ -266,6 +227,46 @@ public class PathExecutor {
 					// TODO: handle exception
 				}
 		    }
+				AgentSimulator sim = AgentSimulator.fromLocalPlayer(player, player.getDeltaMovement());
+				TungstenModRenderContainer.ERROR.clear();
+				RenderHelper.clearRenderers();
+				double size = 0.01D;
+				for (int i = this.tick; i < Math.min(this.tick+8, this.path.size()); i++) {
+					Node n = this.path.get(i);
+					AgentStatus agentStatus = sim.simulate(n.input);
+
+					if (!n.agentStatus.position.equals(agentStatus.position)) {
+						RenderHelper.renderNode(n, TungstenModRenderContainer.ERROR);
+						TungstenModRenderContainer.ERROR.add(
+								new Cuboid(
+										agentStatus.position.subtract(size/2, size/2-0.02D, size/2), new Vec3(size, size, size),
+										Color.RED
+								)
+						);
+						stop = true;
+
+						while (!this.blockPath.isEmpty() && !this.blockPath.getFirst().getPos().closerThan(TungstenModDataContainer.player.position(),5)) {
+							this.blockPath.removeFirst();
+						}
+						new Thread(() -> {
+
+							while (TungstenModDataContainer.PATHFINDER.active.get()) {
+								if (!TungstenModDataContainer.PATHFINDER.stop.get()) {
+									TungstenModDataContainer.PATHFINDER.stop.set(true);
+								}
+								try {
+									Thread.sleep(2);
+								} catch (InterruptedException e) {
+//                                    throw new RuntimeException(e);
+								}
+							}
+							TungstenModDataContainer.PATHFINDER.find(TungstenModDataContainer.world, TungstenClient.TARGET, TungstenModDataContainer.player, Optional.of(this.blockPath));
+
+						}).start();
+
+					}
+
+				}
 	    }
 	    this.tick++;
     }

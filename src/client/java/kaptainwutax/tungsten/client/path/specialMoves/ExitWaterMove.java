@@ -39,7 +39,7 @@ public class ExitWaterMove {
     		distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
     		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(newNode.agent.getPos(), nextBlockNode.getPos(true));
     		desiredPitch = (float) DirectionHelper.calcPitchFromVec3d(newNode.agent.getPos(), nextBlockNode.getPos(true));
-            newNode = new Node(newNode, world, new AgentInput(true, false, false, true, true, false, true, desiredPitch, desiredYaw + 45),
+            newNode = new Node(newNode, world, new AgentInput(true, false, false, false, true, false, true, desiredPitch, desiredYaw),
             		new Color(0, 255, 150), newNode.cost);
 			NodeCostCalculator.updateNode(world, newNode, nextBlockNode.getPos(true));
 			newNode.combinedCost = newNode.combinedCost * 0.0004;

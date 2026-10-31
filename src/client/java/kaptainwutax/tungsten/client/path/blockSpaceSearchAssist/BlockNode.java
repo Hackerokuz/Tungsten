@@ -5,9 +5,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
-import kaptainwutax.tungsten.Tungsten;
 import kaptainwutax.tungsten.client.Debug;
-import kaptainwutax.tungsten.client.TungstenClient;
 import kaptainwutax.tungsten.client.TungstenModDataContainer;
 import kaptainwutax.tungsten.client.TungstenModRenderContainer;
 import kaptainwutax.tungsten.client.helpers.BlockShapeChecker;
@@ -41,10 +39,13 @@ public class BlockNode {
 	public final int z;
 	
 
-	public Vec3 chachedPos = null;
-	public Vec3 chachedWithOffsetPos = null;
+	public Vec3 cachedPos = null;
+	public Vec3 cachedWithOffsetPos = null;
 	public BlockState chachedBlockState = null;
 	public BlockPos chachedBlockPos = null;
+	public BlockState cachedState; // state at this position
+	public BlockState cachedStateBelow;   // state below this position
+	public boolean cachedCanStandOn;
 	
 	public Boolean isDoingLongJump = null;
 
@@ -95,8 +96,14 @@ public class BlockNode {
 		this.x = pos.getX();
 		this.y = pos.getY();
 		this.z = pos.getZ();
-		this.wasOnSlime = world.getBlockState(pos.below()).getBlock() instanceof SlimeBlock;
-		this.wasOnLadder = world.getBlockState(pos).getBlock() instanceof LadderBlock;
+		this.chachedBlockPos = pos;
+		this.cachedState = player.level().getBlockState(this.chachedBlockPos);
+		this.cachedState = world.getBlockState(pos);
+		this.cachedStateBelow = world.getBlockState(pos.below());
+		this.wasOnSlime = this.cachedStateBelow.getBlock() instanceof SlimeBlock;
+		this.wasOnLadder = this.cachedState.getBlock() instanceof LadderBlock;
+		this.cachedCanStandOn = BlockShapeChecker.hasBiggerCollisionShapeThanAbove(world, pos.below())
+				|| BlockStateChecker.isAnyWater(this.cachedState);
 	}
 
 	public BlockNode(int x, int y, int z, Goal goal, Player player) {
@@ -111,17 +118,43 @@ public class BlockNode {
 		this.x = x;
 		this.y = y;
 		this.z = z;
-		this.wasOnSlime = player.level().getBlockState(new BlockPos(x, y - 1, z))
-				.getBlock() instanceof SlimeBlock;
-		this.wasOnLadder = player.level().getBlockState(new BlockPos(x, y, z)).getBlock() instanceof LadderBlock;
+		this.chachedBlockPos = new BlockPos(x, y, z);
+		this.cachedState = player.level().getBlockState(this.chachedBlockPos);
+		this.cachedStateBelow = player.level().getBlockState(new BlockPos(x, y - 1, z));
+		this.wasOnSlime = this.cachedStateBelow.getBlock() instanceof SlimeBlock;
+		this.wasOnLadder = this.cachedState.getBlock() instanceof LadderBlock;
+		this.cachedCanStandOn = BlockShapeChecker.hasBiggerCollisionShapeThanAbove(player.level(), this.getBlockPos().below())
+				|| BlockStateChecker.isAnyWater(this.cachedState);
 	}
 
 	public BlockNode(int x, int y, int z, Goal goal, BlockNode parent, double cost, Player player) {
 		this.player = player;
 		this.previous = parent;
-		this.wasOnSlime = player.level().getBlockState(new BlockPos(x, y - 1, z))
-				.getBlock() instanceof SlimeBlock;
-		this.wasOnLadder = player.level().getBlockState(new BlockPos(x, y, z)).getBlock() instanceof LadderBlock;
+		this.chachedBlockPos = new BlockPos(x, y, z);
+		this.cachedState = player.level().getBlockState(this.chachedBlockPos);
+		this.cachedStateBelow = player.level().getBlockState(new BlockPos(x, y - 1, z));
+		this.wasOnSlime = this.cachedStateBelow.getBlock() instanceof SlimeBlock;
+		this.wasOnLadder = this.cachedState.getBlock() instanceof LadderBlock;
+		this.cachedCanStandOn = BlockShapeChecker.hasBiggerCollisionShapeThanAbove(player.level(), this.getBlockPos().below())
+				|| BlockStateChecker.isAnyWater(this.cachedState);
+		this.cost = parent != null ? cost : ActionCosts.COST_INF;
+		this.estimatedCostToGoal = goal.heuristic(x, y, z);
+		if (Double.isNaN(estimatedCostToGoal)) {
+			throw new IllegalStateException(goal + " calculated implausible heuristic");
+		}
+		this.heapPosition = -1;
+		this.x = x;
+		this.y = y;
+		this.z = z;
+	}
+
+	public BlockNode(int x, int y, int z, Goal goal, BlockNode parent, double cost, Player player, BlockState stateAt, BlockState stateBelow) {
+		this.player = player;
+		this.previous = parent;
+		this.wasOnSlime = stateBelow.getBlock() instanceof SlimeBlock;
+		this.wasOnLadder = stateAt.getBlock() instanceof LadderBlock;
+		this.cachedState = stateAt;
+		this.cachedStateBelow = stateBelow;
 		this.cost = parent != null ? cost : ActionCosts.COST_INF;
 		this.estimatedCostToGoal = goal.heuristic(x, y, z);
 		if (Double.isNaN(estimatedCostToGoal)) {
@@ -141,7 +174,7 @@ public class BlockNode {
 	 * TODO: Possibly reimplement hashCode and equals. They are necessary for this
 	 * class to function but they could be done better
 	 *
-	 * @return The hash code value for this {@link PathNode}
+	 * @return The hash code value for this {@link Node}
 	 */
 	@Override
 	public int hashCode() {
@@ -162,38 +195,38 @@ public class BlockNode {
 	}
 
 	public Vec3 getPos(boolean shift, Level world) {
-		if (!shift && chachedPos != null) return chachedPos;
+		if (!shift && cachedPos != null) return cachedPos;
 		if (shift) {
 			if (isDoingNeo && !(this.getBlockState(world).getBlock() instanceof LadderBlock)) {
-				chachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
+				cachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
 //				chachedWithOffsetPos = BlockPosShifter.getPosOnLadder(this, world);
-				return chachedWithOffsetPos;
+				return cachedWithOffsetPos;
 			}
-			if (chachedWithOffsetPos != null) return chachedWithOffsetPos;
+			if (cachedWithOffsetPos != null) return cachedWithOffsetPos;
 			if (isDoingNeo) {
-				chachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
-				return chachedWithOffsetPos;
+				cachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
+				return cachedWithOffsetPos;
 			}
 
 			if (BlockShapeChecker.getBlockHeight(this.getBlockPos().below(), world) > 1) {
-				chachedWithOffsetPos = BlockPosShifter.getPosOnLadder(this, world);
-				chachedWithOffsetPos = chachedWithOffsetPos.add(0, BlockShapeChecker.getBlockHeight(this.getBlockPos().below(), world)-1, 0);
-				if (isDoingNeo) chachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
-				return chachedWithOffsetPos;
+				cachedWithOffsetPos = BlockPosShifter.getPosOnLadder(this, world);
+				cachedWithOffsetPos = cachedWithOffsetPos.add(0, BlockShapeChecker.getBlockHeight(this.getBlockPos().below(), world)-1, 0);
+				if (isDoingNeo) cachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
+				return cachedWithOffsetPos;
 			}
 			if (BlockShapeChecker.getBlockHeight(this.getBlockPos(), world) > 0) {
-				chachedWithOffsetPos = BlockPosShifter.getPosOnLadder(this, world);
+				cachedWithOffsetPos = BlockPosShifter.getPosOnLadder(this, world);
 				double blockVolume = BlockShapeChecker.getShapeVolume(this.getBlockPos(), world);
-				chachedWithOffsetPos = chachedWithOffsetPos.add(0, BlockShapeChecker.getBlockHeight(this.getBlockPos(), world), 0);
-				if (isDoingNeo) chachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
-				return chachedWithOffsetPos;
+				cachedWithOffsetPos = cachedWithOffsetPos.add(0, BlockShapeChecker.getBlockHeight(this.getBlockPos(), world), 0);
+				if (isDoingNeo) cachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
+				return cachedWithOffsetPos;
 			}
-			chachedWithOffsetPos = BlockPosShifter.getPosOnLadder(this, world);
-			if (isDoingNeo) chachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
-			return chachedWithOffsetPos;
+			cachedWithOffsetPos = BlockPosShifter.getPosOnLadder(this, world);
+			if (isDoingNeo) cachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
+			return cachedWithOffsetPos;
 		}
-		chachedPos = new Vec3(x, y, z);
-		return chachedPos;
+		cachedPos = new Vec3(x, y, z);
+		return cachedPos;
 	}
 
 	public boolean isDoingJump() {
@@ -247,7 +280,7 @@ public class BlockNode {
 
 	public List<BlockNode> getChildren(Level world, Goal goal, boolean generateDeep) {
 
-		List<BlockNode> nodes = getNodesIn3DCircle(8, this, goal, generateDeep);
+		List<BlockNode> nodes = getNodesIn3DCircle(radiusTo(this, goal), this, goal, generateDeep);
 //		nodes.removeIf((child) -> {
 //			return shouldRemoveNode(world, child);
 //		});
@@ -273,8 +306,6 @@ public class BlockNode {
 ////            throw new RuntimeException(e);
 //        }
 
-        TungstenModRenderContainer.TEST.clear();
-
 		return filtered;
 
 	}
@@ -286,7 +317,6 @@ public class BlockNode {
 	public static boolean wasCleared(Level world, BlockPos start, BlockPos end, BlockNode startNode,
 			BlockNode endNode) {
 
-		TungstenModRenderContainer.TEST.clear();
 		boolean shouldRender = false;
 		boolean shouldSlow = false;
 		
@@ -318,7 +348,7 @@ public class BlockNode {
 		return false;
 	}
 
-	private List<BlockNode> getNodesIn3DCircle(int d, BlockNode parent, Goal goal, boolean generateDeep) {
+	private List<BlockNode> getNodesIn3DCircle(int radius, BlockNode parent, Goal goal, boolean generateDeep) {
 		ConcurrentLinkedQueue<BlockNode> nodes = new ConcurrentLinkedQueue<>();
 
 		// TODO: Create a circle of nodes 1 block above current player pos and then move each node down until ground is found.
@@ -389,8 +419,8 @@ public class BlockNode {
 //            }
 //        });
 
-		for (int pz = -6; pz < 6; pz++) {
-			for (int px = -6; px < 6; px++) {
+		for (int pz = -radius; pz < radius; pz++) {
+			for (int px = -radius; px < radius; px++) {
 
 				boolean isDoingJump = Math.abs(pz) > 1 || Math.abs(px) > 1;
 
@@ -583,6 +613,15 @@ public class BlockNode {
         return new ArrayList<>(nodes);
 	}
 
+	private static int radiusTo(BlockNode from, Goal goal) {
+
+		double dx = goal.x - from.x;
+		double dz = goal.z - from.z;
+		double horiz = Math.sqrt(dx * dx + dz * dz);
+		int r = (int) Math.ceil(horiz / 4.0);
+		return Math.clamp(r, 2, 6);
+	}
+
 	private boolean shouldRemoveNode(Level world, BlockNode child) {
 		if (TungstenModDataContainer.PATHFINDER.stop.get())
 			return true;
@@ -590,13 +629,12 @@ public class BlockNode {
 //		BlockState currentBlockState = world.getBlockState(getBlockPos());
 //		BlockState currentBlockBelowState = world.getBlockState(getBlockPos().down());
 //		BlockState childAboveState = world.getBlockState(child.getBlockPos().up());
-		BlockState childState = world.getBlockState(child.getBlockPos());
+		BlockState childState = child.cachedState != null ? child.cachedState : world.getBlockState(child.getBlockPos());
 //		BlockState childBelowState = world.getBlockState(child.getBlockPos().down());
 //		Block currentBlock = currentBlockState.getBlock();
 //		Block childBlock = childState.getBlock();
 //		Block childBelowBlock = childBelowState.getBlock();
 //		boolean isAboveChildSolid = BlockShapeChecker.getShapeVolume(child.getBlockPos().up(), world) > 0;
-		boolean isAboveChildSolid2 = BlockShapeChecker.getShapeVolume(child.getBlockPos().above(2), world) > 0;
 //
 //		if (BlockStateChecker.isAnyWater(childState)) {
 //
@@ -607,9 +645,10 @@ public class BlockNode {
 //		if (child.getPos().y > this.getPos().y && childBelowState.isAir())
 //			return true;
 //
-		BlockState blockState = world.getBlockState(child.getBlockPos());
-		boolean canStandOn = BlockShapeChecker.hasBiggerCollisionShapeThanAbove(world, child.getBlockPos().below()) || BlockStateChecker.isAnyWater(blockState);
-//
+
+		boolean canStandOn = child.cachedCanStandOn
+				|| BlockShapeChecker.hasBiggerCollisionShapeThanAbove(world, child.getBlockPos().below())
+				|| BlockStateChecker.isAnyWater(childState);
 		if (!canStandOn) return true;
 
 //		// Collision shape and block exceptions
@@ -632,11 +671,6 @@ public class BlockNode {
 		if (!wasCleared(world, getBlockPos(), child.getBlockPos(), this, child)) {
 			return true;
 		}
-
-		if (BlockStateChecker.isBottomSlab(childState) && isAboveChildSolid2)
-			child.cost += 2;
-		if (BlockStateChecker.isAnyWater(childState))
-			child.cost += 2;
 		
 		return false;
 	}

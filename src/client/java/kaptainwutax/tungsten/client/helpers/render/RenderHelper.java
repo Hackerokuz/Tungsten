@@ -65,7 +65,7 @@ public class RenderHelper {
 			if (parent == null) continue;
 			TungstenModRenderContainer.RUNNING_PATH_RENDERER.add(new Line(n.agent.getPos(), parent.agent.getPos(), n.color));
 //			if (TungstenMod.renderPositonBoxes) {
-				TungstenModRenderContainer.RUNNING_PATH_RENDERER.add(new Cuboid(n.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3(0.1D, 0.1D, 0.1D), n.color));
+				renderNode(n, TungstenModRenderContainer.RUNNING_PATH_RENDERER);
 //			}
 		}
 	}
@@ -92,7 +92,8 @@ public class RenderHelper {
 	}
 	
 	public static void renderNode(Node n) {
-		TungstenModRenderContainer.RENDERERS.add(new Cuboid(n.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3(0.1D, 0.1D, 0.1D), n.color));
+		double size = 0.03D;
+		TungstenModRenderContainer.RENDERERS.add(new Cuboid(n.agent.getPos().subtract(size/2, size/2, size/2), new Vec3(size, size, size), n.color));
 	}
 
 	public static void renderNode(BlockNode n) {
@@ -104,7 +105,8 @@ public class RenderHelper {
 	}
 	
 	public static void renderNode(Node n, Collection<Renderer> renderer) {
-		renderer.add(new Cuboid(n.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3(0.1D, 0.1D, 0.1D), n.color));
+		double size = 0.1D;
+		renderer.add(new Cuboid(n.agent.getPos().subtract(size/2, size/2-0.06D, size/2), new Vec3(size, size, size), n.color));
 	}
 	
 	public static void renderNodeConnection(Node child, Node parent) {

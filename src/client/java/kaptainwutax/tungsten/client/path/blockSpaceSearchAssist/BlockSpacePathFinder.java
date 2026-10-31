@@ -21,8 +21,9 @@ public class BlockSpacePathFinder {
 	public static Thread thread = null;
 	protected static final double[] COEFFICIENTS = {1.5, 2, 2.5, 3, 4, 5, 10};
 	protected static final BlockNode[] bestSoFar = new BlockNode[COEFFICIENTS.length];
-	private static final double minimumImprovement = 4e6;
+	private static final double minimumImprovement = 0.21;
 	protected static final double MIN_DIST_PATH = 5;
+	private static final double HEURISTIC_WEIGHT = 5.0;   // try 8-12 for a faster coarse search
 	
 	
 	public static void find(Level world, Vec3 target, LocalPlayer player) {
@@ -63,31 +64,36 @@ public class BlockSpacePathFinder {
         int numNodes = 0;
         int timeCheckInterval = 1 << 6;
         long startTime = System.currentTimeMillis();
-        long primaryTimeoutTime = startTime + (generateDeep ? 4800L : 480L);
+		long primaryTimeoutTime = startTime + (generateDeep ? 4800L : 480L);
+		long failureTimeoutTime = startTime + (generateDeep ? 9600L : 960L);
 		
         TungstenModRenderContainer.RENDERERS.clear();
 		Debug.logMessage("Searching...");
 		start = new BlockNode(start.getBlockPos(), goal, player, world);
-
+		start.cost = 0;
+		target = target.subtract(0.5, 0, 0.5);
+		start.estimatedCostToGoal = computeHeuristic(start.getPos(), target, world);
+		start.combinedCost = start.estimatedCostToGoal;
 		double[] bestHeuristicSoFar = new double[COEFFICIENTS.length];//keep track of the best node by the metric of (estimatedCostToGoal + cost / COEFFICIENTS[i])
 		for (int i = 0; i < COEFFICIENTS.length; i++) {
-            bestHeuristicSoFar[i] = computeHeuristic(start.getPos(), target, world);
+			bestHeuristicSoFar[i] = start.estimatedCostToGoal + start.cost / COEFFICIENTS[i];
             bestSoFar[i] = start;
         }
 
 		BinaryHeapOpenSet openSet = new BinaryHeapOpenSet();
 		Set<BlockNode> closed = new HashSet<>();
 		openSet.insert(start);
-		target = target.subtract(0.5, 0, 0.5);
+		boolean timedOut = false;
 		while(!openSet.isEmpty()) {
 			if (TungstenModDataContainer.PATHFINDER.stop.get()) {
 				RenderHelper.clearRenderers();
 				break;
 			}
-			TungstenModRenderContainer.RENDERERS.clear();
+
 			if ((numNodes & (timeCheckInterval - 1)) == 0) { // only call this once every 64 nodes (about half a millisecond)
                 long now = System.currentTimeMillis(); // since nanoTime is slow on windows (takes many microseconds)
-                if ((!failing && now - primaryTimeoutTime >= 0)) {
+				if (now - failureTimeoutTime >= 0 || (!failing && now - primaryTimeoutTime >= 0)) {
+					timedOut = true;
                     break;
                 }
             }
@@ -105,12 +111,9 @@ public class BlockSpacePathFinder {
 				
 				return Optional.of(path);
 			}
-			new Thread(() -> {
-				if(TungstenModRenderContainer.RENDERERS.size() > 3000) {
-					TungstenModRenderContainer.RENDERERS.clear();
-				}
+			if (numNodes % 8 == 0) {
 				RenderHelper.renderPathSoFar(next);
-			}).start();
+			}
 //			try {
 //				Thread.sleep(200);
 //			} catch (InterruptedException e) {
@@ -118,7 +121,7 @@ public class BlockSpacePathFinder {
 			
 			for(BlockNode child : next.getChildren(world, goal, generateDeep)) {
 				if (TungstenModDataContainer.PATHFINDER.stop.get()) return Optional.empty();
-//				if (closed.contains(child)) continue;
+				if (closed.contains(child)) continue;
 
 				updateNode(next, child, target, world);
 				
@@ -129,9 +132,9 @@ public class BlockSpacePathFinder {
                 }
 
 				for (int i = 0; i < COEFFICIENTS.length; i++) {
-					double heuristic = child.estimatedCostToGoal + child.cost / COEFFICIENTS[i];
-					if (bestHeuristicSoFar[i] - heuristic > minimumImprovement) {
-						bestHeuristicSoFar[i] = heuristic;
+					double score = child.estimatedCostToGoal + child.cost * 1e-4;
+					if (bestHeuristicSoFar[i] - score > minimumImprovement) {
+						bestHeuristicSoFar[i] = score;
 						bestSoFar[i] = child;
 						if (failing && getDistFromStartSq(child, start.getPos()) > MIN_DIST_PATH * MIN_DIST_PATH) {
 							failing = false;
@@ -139,43 +142,47 @@ public class BlockSpacePathFinder {
 					}
 				}
 			}
-            
-
 
 		}
 
-		if (openSet.isEmpty()) {
+		if (openSet.isEmpty() && !timedOut) {
 			if (!generateDeep) {
-				return search(world, start, target, true, player);
+				BlockNode best = bestNode(start.getPos(true));
+				if (best != null) {
+					Debug.logMessage(best.toString());
+					return search(world, best, target, true, player);
+				}
+				Debug.logMessage("NO BEST");
 			}
 			Debug.logWarning("Ran out of nodes");
 			return Optional.empty();
 		}
         return bestSoFar(true, numNodes, start, world);
 	}
-	
+
 	protected static Optional<List<BlockNode>> bestSoFar(boolean logInfo, int numNodes, BlockNode startNode, Level world) {
-        if (startNode == null) {
-            return Optional.empty();
-        }
-        double bestDist = 0;
-        for (int i = 0; i < COEFFICIENTS.length; i++) {
-            if (bestSoFar[i] == null) {
-                continue;
-            }
-            double dist = getDistFromStartSq(bestSoFar[i], startNode.getPos());
-            if (dist > bestDist) {
-                bestDist = dist;
-                continue;
-            }
-            if (dist > MIN_DIST_PATH * MIN_DIST_PATH) { // square the comparison since distFromStartSq is squared
-                BlockNode n = bestSoFar[i];
-				List<BlockNode> path = generatePath(n, world);
-				if (path.size() > 1) return Optional.of(path);
-            }
-        }
-        return Optional.empty();
-    }
+		if (startNode == null) {
+			return Optional.empty();
+		}
+		BlockNode best = bestNode(startNode.getPos(true));
+		if (best == null) return Optional.empty();
+		double bestDist = getDistFromStartSq(best, startNode.getPos());
+		if (bestDist <= MIN_DIST_PATH * MIN_DIST_PATH) return Optional.empty();   // nothing moved
+		List<BlockNode> path = generatePath(best, world);
+		return path.size() > 1 ? Optional.of(path) : Optional.empty();
+	}
+
+	/** The best node the record is pointing at, across all seven coefficients. */
+	private static BlockNode bestNode(Vec3 searchStart) {
+		BlockNode best = null;
+		double bestDist = 0;
+		for (int i = 0; i < COEFFICIENTS.length; i++) {
+			if (bestSoFar[i] == null) continue;
+			double dist = getDistFromStartSq(bestSoFar[i], searchStart);
+			if (dist > bestDist) { bestDist = dist; best = bestSoFar[i]; }
+		}
+		return best;
+	}
 	
 	private static double computeHeuristic(Vec3 position, Vec3 target, Level world) {
 	    double dx = (target.x - position.x);
@@ -184,7 +191,7 @@ public class BlockSpacePathFinder {
 //	    if (DistanceCalculator.getHorizontalManhattanDistance(position, target) < 32) {
 //	    	dy = (target.y - position.y)*1.5;
 //	    }
-	    return (Math.sqrt(dx * dx + dy * dy + dz * dz)) /** 3*/;
+	    return (Math.sqrt(dx * dx + dy * dy + dz * dz)) * HEURISTIC_WEIGHT;
 	}
 	
 	private static void updateNode(BlockNode current, BlockNode child, Vec3 target, Level world) {
@@ -199,18 +206,25 @@ public class BlockSpacePathFinder {
 			tentativeCost += ActionCosts.WALK_ONE_IN_WATER_COST;
 		}
 		if (child.isDoingJump()) {
-			tentativeCost += ActionCosts.JUMP_ONE_BLOCK_COST + 0.5;
+			tentativeCost += ActionCosts.JUMP_ONE_BLOCK_COST + 1.5 + ActionCosts.WALK_ONE_BLOCK_COST * current.getPos(true).distanceTo(child.getPos(true));
 		}
 		if (child.isDoingNeo()) {
-			tentativeCost += 2.8;
+			tentativeCost += ActionCosts.JUMP_ONE_BLOCK_COST * 20.8;
 		}
 		if (child.getBlockPos().getY() > current.getBlockPos().getY()) {
-			tentativeCost += Math.max(ActionCosts.JUMP_ONE_BLOCK_COST, ActionCosts.WALK_ONE_BLOCK_COST) + 2;
+			tentativeCost += Math.max(ActionCosts.JUMP_ONE_BLOCK_COST, ActionCosts.WALK_ONE_BLOCK_COST) + 0.2;
 		}
+
+
+		boolean isAboveChildSolid2 = BlockShapeChecker.getShapeVolume(child.getBlockPos().above(2), world) > 0;
+		if (BlockStateChecker.isBottomSlab(child.cachedState) && isAboveChildSolid2)
+			child.cost += 2;
+		if (BlockStateChecker.isAnyWater(child.cachedState))
+			child.cost += 2;
 
 //	    tentativeCost += BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(child.getBlockPos())) ? 50 : 0; // Assuming uniform cost for each step
 
-	    double estimatedCostToGoal = computeHeuristic(childPos, target, world) * 5;
+	    double estimatedCostToGoal = computeHeuristic(childPos, target, world);
 
 	    child.previous = current;
 	    child.cost = tentativeCost;
@@ -221,8 +235,8 @@ public class BlockSpacePathFinder {
 	
 	private static double getDistFromStartSq(BlockNode n, Vec3 start) {
         double xDiff = start.x - n.getPos().x;
-        double yDiff = start.x - n.getPos().y;
-        double zDiff = start.x - n.getPos().z;
+        double yDiff = start.y - n.getPos().y;
+        double zDiff = start.z - n.getPos().z;
         return xDiff * xDiff + yDiff * yDiff + zDiff * zDiff;
     }
 
